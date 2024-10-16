@@ -4,6 +4,8 @@ import numpy as np
 from scipy.special import lambertw
 from scipy.integrate import dblquad
 from scipy.interpolate import InterpolatedUnivariateSpline
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import os
 from scipy.optimize import fsolve
@@ -185,34 +187,12 @@ def efullz(a, sqrtsnn, tauf, ntimes):
         x = ep_pieces(sqrtsnn, times[i], mn, ra, at, a, tauf)
         ep_dens[i] = x[0]
 
-    # # Calculate interpolation function of epsilon vs time
-
-    # # Time array to evaluate the interperolation and derivative
-    # tint = np.linspace(ta(sqrtsnn,mn,ra,tauf), t2(sqrtsnn,mn,ra)+tauf, 100)
-
-    # # Quartic interpolation spline using epsilon(t)
-    # f = InterpolatedUnivariateSpline(times, ep_dens, k = 4)
-
-    # # Roots method only applies to cubic splines! So we take derivative of f
-    # critpoints = f.derivative().roots()
-
-    # # Also include end points in array of critical points
-    # critpoints = np.append(critpoints, (tint[0], tint[-1]))
-
-    # # Values of critical points
-    # critvals = f(critpoints)
-
-    # # Maximum value of critical points array
-    # maxindx = np.argmax(critvals)
-    # tmax = critpoints[maxindx]
-    # emax = critvals[maxindx]
-
     # Write to file
     output = np.array([times, ep_dens]).transpose()
 
     myHeader = 'time (fm/c), energy density (GeV/fm^3)'
 
-    outfile = '/home/toddmmendenhall/mysite/energy_density/results/e-dens-vs-t.dat'
+    outfile = 'results/e-dens-vs-t.dat'
 
     np.savetxt(outfile, output, delimiter = ',', fmt='%.4f', header = myHeader)
 
@@ -220,9 +200,6 @@ def efullz(a, sqrtsnn, tauf, ntimes):
     fig, ax = plt.subplots()
 
     plt.plot(times, ep_dens, marker = '.')
-
-    # plt.axhline(emax, c = 'k', ls = ':')
-    # plt.axvline(tmax, c = 'k', ls = ':')
 
     plt.xlim(0, timesMax)
     plt.ylim(0)
@@ -233,16 +210,10 @@ def efullz(a, sqrtsnn, tauf, ntimes):
         + str(int(a)) + ', $\\tau_F$ = ' + str(tauf) + ' fm/c')
 
     leglist = ['Semi-analytical result']
-        # , \
-        # 'Interpolation', \
-        # '$\mathrm{\epsilon}^{max}$ = ' + str(np.round(emax, decimals = 2)) \
-        #     + ' GeV/fm$^3$', \
-        # 't$_{max}$ = ' + str(np.round(tmax, decimals = 2)) + ' fm/c'
-        # ]
 
     plt.legend(leglist, frameon=False)
 
-    figfile = '/home/toddmmendenhall/mysite/energy_density/results/e-vs-t.pdf'
+    figfile = 'results/e-vs-t.pdf'
 
     plt.tight_layout()
     plt.savefig(figfile)
@@ -343,66 +314,14 @@ def nbfullz(a, sqrtsnn, tauf, ntimes):
         x = nb_pieces(sqrtsnn, times[i], mn, ra, at, a, tauf)
         nb_dens[i] = x[0]
 
-    # # Calculate interpolation function of epsilon vs time
-
-    # # Time array to evaluate the interperolation and derivative
-    # tint = np.linspace(ta(sqrtsnn, mn, ra, tauf), t2(sqrtsnn, mn, ra) + tauf, ntimes)
-
-    # # Quartic interpolation spline using epsilon(t)
-    # f = InterpolatedUnivariateSpline(times, nb_dens, k = 4)
-
-    # # Roots method only applies to cubic splines! So we take derivative of f
-    # critpoints = f.derivative().roots()
-
-    # # Also include end points in array of critical points
-    # critpoints = np.append(critpoints, (tint[0], tint[-1]))
-
-    # # Values of critical points
-    # critvals = f(critpoints)
-
-    # # Maximum value of critical points array
-    # maxindx = np.argmax(critvals)
-    # tmax = critpoints[maxindx]
-    # emax = critvals[maxindx]
-
     # Write to file
     output = np.array([times, nb_dens]).transpose()
 
     myHeader = 'time (fm/c), net-Baryon density (GeV/fm^3)'
 
-    outfile = '/home/toddmmendenhall/mysite/energy_density/results/nB-dens-vs-t.dat'
+    outfile = 'results/nB-dens-vs-t.dat'
 
     np.savetxt(outfile, output, delimiter = ',', fmt='%.4f', header = myHeader)
-
-    # # Make plot and save to file
-    # fig, ax = plt.subplots()
-
-    # plt.plot(times, nb_dens, marker = '.')
-
-    # plt.axhline(emax, c = 'k', ls = ':')
-    # plt.axvline(tmax, c = 'k', ls = ':')
-
-    # plt.xlim(0, timesMax)
-    # plt.ylim(bottom=0)
-
-    # plt.xlabel('t (fm/c)')
-    # plt.ylabel('$n_B(t)$ (fm$^{-3}$)')
-    # plt.title('$\sqrt{\mathrm{s_{NN}}}$ = ' + str(sqrtsnn) + ' GeV, A = ' \
-    #     + str(int(a)) + ', $\\tau_F$ = ' + str(tauf) + ' fm/c')
-
-    # leglist = [
-    #     'Semi-analytical result', \
-    #     # 'Interpolation', \
-    #     '$\mathrm{n_B}^{max}$ = ' + str(np.round(emax, decimals = 2)) \
-    #         + ' GeV/fm$^3$', \
-    #     't$_{max}$ = ' + str(np.round(tmax, decimals = 2)) + ' fm/c']
-
-    # plt.legend(leglist, frameon = False)
-
-    # figfile = '/home/toddmmendenhall/mysite/energy_density/results/results.pdf'
-
-    # plt.tight_layout()
-    # plt.savefig(figfile)
 
     return
 
@@ -485,15 +404,6 @@ def quant_full_soln(z, a, sqrtsnn, tauf, ntimes):
 
     plt.title('$\sqrt{\mathrm{s_{NN}}}$ = ' + str(sqrtsnn) + ' GeV, Z = ' + str(int(z)) + ', A = ' + str(int(a)) + ', $\\tau_F$ = ' + str(tauf) + ' fm/c, Quantum Statistics')
 
-    # leglist = [
-    #     'Semi-analytical result', \
-    #     # 'Interpolation', \
-    #     '$\mathrm{n_B}^{max}$ = ' + str(np.round(emax, decimals = 2)) \
-    #         + ' GeV/fm$^3$', \
-    #     't$_{max}$ = ' + str(np.round(tmax, decimals = 2)) + ' fm/c']
-
-    # plt.legend(leglist, frameon = False)
-
     figfile = '/home/toddmmendenhall/mysite/energy_density/results/results.pdf'
 
     plt.tight_layout()
@@ -521,8 +431,8 @@ def boltz_full_soln(z, a, sqrtsnn, tauf, ntimes):
     times = np.insert(times, 0, 0)
 
     # Import ep_dens and nB_dens data files into arrays
-    e_file = '/home/toddmmendenhall/mysite/energy_density/results/e-dens-vs-t.dat'
-    nB_file = '/home/toddmmendenhall/mysite/energy_density/results/nB-dens-vs-t.dat'
+    e_file = 'results/e-dens-vs-t.dat'
+    nB_file = 'results/nB-dens-vs-t.dat'
 
     e_dens = np.loadtxt(e_file, delimiter=',', usecols=1)
     nB_dens = np.loadtxt(nB_file, delimiter=',', usecols=1)
@@ -559,7 +469,7 @@ def boltz_full_soln(z, a, sqrtsnn, tauf, ntimes):
 
     # Save t, e_dens, T, muB, muS, muQ to data files
     output = np.vstack((times, e_dens, traj, muQ)).transpose()
-    outfile = '/home/toddmmendenhall/mysite/energy_density/results/T-muB-muS-muQ-vs-t.dat'
+    outfile = 'results/T-muB-muS-muQ-vs-t.dat'
     myHeader = 't (fm/c), e (GeV/fm^3), T (MeV), muB (MeV), muS (MeV), muQ (MeV)'
 
     np.savetxt(outfile, output, delimiter=',', fmt='%12.3f', header=myHeader)
@@ -580,47 +490,9 @@ def boltz_full_soln(z, a, sqrtsnn, tauf, ntimes):
 
     plt.title('$\sqrt{\mathrm{s_{NN}}}$ = ' + str(sqrtsnn) + ' GeV, Z = ' + str(int(z)) + ', A = ' + str(int(a)) + ', $\\tau_F$ = ' + str(tauf) + ' fm/c, Boltzmann Statistics')
 
-    # leglist = [
-    #     'Semi-analytical result', \
-    #     # 'Interpolation', \
-    #     '$\mathrm{n_B}^{max}$ = ' + str(np.round(emax, decimals = 2)) \
-    #         + ' GeV/fm$^3$', \
-    #     't$_{max}$ = ' + str(np.round(tmax, decimals = 2)) + ' fm/c']
-
-    # plt.legend(leglist, frameon = False)
-
-    figfile = '/home/toddmmendenhall/mysite/energy_density/results/results.pdf'
+    figfile = 'results/results.pdf'
 
     plt.tight_layout()
     plt.savefig(figfile)
 
     return
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
