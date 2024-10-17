@@ -9,30 +9,31 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import os
 from scipy.optimize import fsolve
+from utilities import Constants
 
 ################################################################################
 # Define functions of beam energy
 
-def ycm(s, mn):
-    return np.arccosh(s / (2. * mn))
+def ycm(s):
+    return np.arccosh(s / (2 * Constants.nucleonMass))
 
-def beta(s, mn):
-    return np.tanh(ycm(s, mn))
+def beta(s):
+    return np.tanh(ycm(s))
 
-def dt(s, mn, ra):
-    return 2. * ra / np.sinh(ycm(s, mn))
+def dt(s, ra):
+    return 2 * ra / np.sinh(ycm(s))
 
-def t1(s, mn, ra):
-    return dt(s, mn, ra) / 6.
+def t1(s, ra):
+    return dt(s, ra) / 6
 
-def t2(s, mn, ra):
-    return 5. * dt(s, mn, ra) / 6.
+def t2(s, ra):
+    return 5 * dt(s, ra) / 6
 
-def t21(s, mn, ra):
-    return t2(s, mn, ra) - t1(s, mn, ra)
+def t21(s, ra):
+    return t2(s, ra) - t1(s, ra)
 
-def tmid(s, mn, ra):
-    return (t1(s, mn, ra) + t2(s, mn, ra)) / 2.
+def tmid(s, ra):
+    return (t1(s, ra) + t2(s, ra)) / 2
 
 ################################################################################
 # Define functions for integrand
@@ -43,139 +44,120 @@ def y0(z0, x, t):
 def detdy0old(s, a):
     return 0.456 * 2 * a * np.log(s / 2.35)
 
-def detdy0(s, mn, a):
-    if (s <= 20.7): # Use s.any() if s is an array
-        return 1.25 * 0.308 * 2 * a * np.log(s / 2 / mn) ** 1.08
+def detdy0(s, a):
+    if (s <= 20.7):
+        return 1.25 * 0.308 * 2 * a * np.log(s / (2 * Constants.nucleonMass))**1.08
     else:
-        return  detdy0old(s, a)
+        return detdy0old(s, a)
 
-def sigmab(s, mn):
-    return 0.601 * (s - 2 * mn) ** 0.121 * np.log(s / (2 * mn)) ** 0.241
+def sigmab(s):
+    return 0.601 * (s - 2 * Constants.nucleonMass)**0.121 * np.log(s / (2 * Constants.nucleonMass))**0.241
 
-def yb(s, mn):
-    return 0.541 * (s - 2 * mn) ** 0.196 * np.log(s / (2 * mn)) ** 0.392
+def yb(s):
+    return 0.541 * (s - 2 * Constants.nucleonMass)**0.196 * np.log(s / (2 * Constants.nucleonMass))**0.392
 
-def sigmahad(s, mn, a):
-    func = lambda x, s, mn, a: a*s - detdy0(s,mn,a) * np.exp(x**2/2) * np.sqrt(2*np.pi) * x - mn*2*a*np.exp(sigmab(s,mn) ** 2 / 2) * np.cosh(yb(s,mn))
-    return fsolve(func, 0, args = (s,mn,a))
+def sigmahad(s, a):
+    func = lambda x, s, a: a * s - detdy0(s, a) * np.exp(x**2 / 2) * np.sqrt(2 * np.pi) * x - Constants.nucleonMass * 2 * a * np.exp(sigmab(s)**2 / 2) * np.cosh(yb(s))
+    return fsolve(func, 0, args = (s, a))
 
-def detdy(y, s, mn, a):
-    return detdy0(s,mn,a) * np.exp(-(y/sigmahad(s,mn,a))**2/2)
+def detdy(y, s, a):
+    return detdy0(s, a) * np.exp(-(y / sigmahad(s, a))**2 / 2)
 
-def dnbdy0(s, mn, a):
-    return 2*a/(np.sqrt(2*np.pi)*sigmab(s,mn))*np.exp(-(yb(s,mn)/sigmab(s,mn))**2/2)
+def dnbdy0(s, a):
+    return 2 * a / (np.sqrt(2 * np.pi) * sigmab(s)) * np.exp(-(yb(s) / sigmab(s))**2 / 2)
 
-def dnbdy(y, s, mn, a):
-    return dnbdy0(s,mn,a)*0.5*np.exp((yb(s,mn)/sigmab(s,mn))**2/2)*(np.exp(-((y+yb(s,mn))/sigmab(s,mn))**2/2)+np.exp(-((y-yb(s,mn))/sigmab(s,mn))**2/2))
+def dnbdy(y, s, a):
+    return dnbdy0(s, a) * 0.5 * np.exp((yb(s) / sigmab(s))**2 / 2) * (np.exp(-((y + yb(s)) / sigmab(s))**2 / 2) + np.exp(-((y - yb(s)) / sigmab(s))**2 / 2))
 
-def dmtdyhad(y, s, mn, a):
-    return detdy(y,s,mn,a) + mn*dnbdy(y,s,mn,a)
+def dmtdyhad(y, s, a):
+    return detdy(y, s, a) + Constants.nucleonMass * dnbdy(y, s, a)
 
-def ep_integrand(z0, x, s, t, mn, ra, at, a):
-    return 2. /  (at * beta(s,mn) * t21(s,mn,ra)**2.) / (t-x) * dmtdyhad(y0(z0,x,t), s, mn, a) * np.cosh(y0(z0,x,t))**3.
+def ep_integrand(z0, x, s, t, ra, at, a):
+    return 2 / (at * beta(s) * t21(s, ra)**2) / (t - x) * dmtdyhad(y0(z0, x, t), s, a) * np.cosh(y0(z0, x, t))**3
 
-def nb_integrand(z0, x, s, t, mn, ra, at, a):
-    return 2. /  (at * beta(s,mn) * t21(s,mn,ra)**2.) / (t-x) * dnbdy(y0(z0,x,t), s, mn, a) * np.cosh(y0(z0,x,t))**2.
+def nb_integrand(z0, x, s, t, ra, at, a):
+    return 2 / (at * beta(s) * t21(s, ra)**2) / (t - x) * dnbdy(y0(z0, x, t), s, a) * np.cosh(y0(z0, x, t))**2
 
 ################################################################################
 # Define functions for limits of integration
 
-def ta(s, mn, ra, tauf):
-    return tmid(s, mn, ra) + np.sqrt(tauf ** 2. + (beta(s, mn) * t21(s, mn, ra) \
-    / 2.) ** 2.)
+def ta(s, ra, tauf):
+    return tmid(s, ra) + np.sqrt(tauf**2 + (beta(s) * t21(s, ra) / 2)**2)
 
-def x1(s, t, mn, ra, tauf):
-    return (t - beta(s, mn) ** 2. * t1(s, mn, ra) - np.sqrt(beta(s, mn) ** 2. \
-        * ((t - t1(s, mn, ra)) ** 2. - tauf ** 2.) + tauf ** 2.)) \
-        / (1. - beta(s, mn) ** 2.)
+def x1(s, ra, t, tauf):
+    return (t - beta(s)**2 * t1(s, ra) - np.sqrt(beta(s)**2 * ((t - t1(s, ra))**2 - tauf**2) + tauf**2)) / (1 - beta(s)**2)
 
-def x2(s, t, mn, ra, tauf):
-    return (t - beta(s, mn) ** 2. * t2(s, mn, ra) - np.sqrt(beta(s, mn) ** 2. \
-        * ((t - t2(s, mn, ra)) ** 2. - tauf ** 2.) + tauf ** 2.)) \
-        / (1. - beta(s, mn) ** 2.)
+def x2(s, ra, t, tauf):
+    return (t - beta(s)**2 * t2(s, ra) - np.sqrt(beta(s)**2 * ((t - t2(s, ra))**2 - tauf**2) + tauf**2)) / (1 - beta(s)**2)
 
 ################################################################################
 # Definition of energy density
 
-def ep_pieces(s, t, mn, ra, at, a, tauf):
-    if t <= t1(s, mn, ra) + tauf:
-        return np.array([0., 0.])
-    elif t > t1(s, mn, ra) + tauf and t < ta(s, mn, ra, tauf):
-        return np.sum(np.array(
-            [
-            dblquad(ep_integrand, \
-                t1(s, mn, ra), \
-                x1(s, t, mn, ra, tauf), \
-                lambda x: -beta(s, mn) * (x - t1(s, mn, ra)), \
-                lambda x: beta(s, mn) * (x - t1(s, mn, ra)), \
-                args = (s, t, mn, ra, at, a)), \
-            dblquad(ep_integrand, \
-                x1(s, t, mn, ra, tauf), \
-                t - tauf, \
-                lambda x: -np.sqrt((t - x) ** 2. - tauf ** 2.), \
-                lambda x: np.sqrt((t - x) ** 2. - tauf ** 2.),\
-                args = (s, t, mn, ra, at, a))
-            ]
-        ).transpose(), axis = 1)
-    elif t >= ta(s, mn, ra, tauf) and t < t2(s, mn, ra) + tauf:
-        return np.sum(np.array(
-            [
-            dblquad(ep_integrand, \
-                t1(s, mn, ra), \
-                tmid(s, mn, ra), \
-                lambda x: -beta(s, mn) * (x - t1(s, mn, ra)), \
-                lambda x: beta(s, mn) * (x - t1(s, mn, ra)), \
-                args = (s, t, mn, ra, at, a)), \
-            dblquad(ep_integrand, \
-                tmid(s, mn, ra), \
-                x2(s, t, mn, ra, tauf), \
-                lambda x: -beta(s, mn) * (t2(s, mn, ra) - x), \
-                lambda x: beta(s, mn) * (t2(s, mn, ra) - x), \
-                args = (s, t, mn, ra, at, a)), \
-            dblquad(ep_integrand, \
-                x2(s, t, mn, ra, tauf), \
-                t - tauf, \
-                lambda x: -np.sqrt((t - x) ** 2. - tauf ** 2.), \
-                lambda x: np.sqrt((t - x) ** 2. - tauf ** 2.),\
-                args = (s, t, mn, ra, at, a))
-            ]
-        ).transpose(), axis = 1)
+def ep_pieces(s, t, ra, at, a, tauf):
+    if t <= t1(s, ra) + tauf:
+        return np.array([0, 0])
+    elif t > t1(s, ra) + tauf and t < ta(s, ra, tauf):
+        return np.sum(np.array([dblquad(ep_integrand,
+                                        t1(s, ra),
+                                        x1(s, ra, t, tauf),
+                                        lambda x: -beta(s) * (x - t1(s, ra)),
+                                        lambda x: beta(s) * (x - t1(s, ra)),
+                                        args = (s, t, ra, at, a)),
+                                dblquad(ep_integrand,
+                                        x1(s, ra, t, tauf),
+                                        t - tauf,
+                                        lambda x: -np.sqrt((t - x)**2 - tauf**2),
+                                        lambda x: np.sqrt((t - x)**2 - tauf**2),
+                                        args = (s, t, ra, at, a))]).transpose(), axis = 1)
+    elif t >= ta(s, ra, tauf) and t < t2(s, ra) + tauf:
+        return np.sum(np.array([dblquad(ep_integrand,
+                                        t1(s, ra),
+                                        tmid(s, ra),
+                                        lambda x: -beta(s) * (x - t1(s, ra)),
+                                        lambda x: beta(s) * (x - t1(s, ra)),
+                                        args = (s, t, ra, at, a)),
+                                dblquad(ep_integrand,
+                                        tmid(s, ra),
+                                        x2(s, ra, t, tauf),
+                                        lambda x: -beta(s) * (t2(s, ra) - x),
+                                        lambda x: beta(s) * (t2(s, ra) - x),
+                                        args = (s, t, ra, at, a)),
+                                dblquad(ep_integrand,
+                                        x2(s, ra, t, tauf),
+                                        t - tauf,
+                                        lambda x: -np.sqrt((t - x)**2 - tauf**2),
+                                        lambda x: np.sqrt((t - x)**2 - tauf**2),
+                                        args = (s, t, ra, at, a))]).transpose(), axis = 1)
     else:
-        return np.sum(np.array(
-        [
-        dblquad(ep_integrand, \
-            t1(s, mn, ra), \
-            tmid(s, mn, ra), \
-            lambda x: -beta(s, mn) * (x - t1(s, mn, ra)), \
-            lambda x: beta(s, mn) * (x - t1(s, mn, ra)), \
-            args = (s, t, mn, ra, at, a)), \
-        dblquad(ep_integrand, \
-            tmid(s, mn, ra), \
-            t2(s, mn, ra), \
-            lambda x: -beta(s, mn) * (t2(s, mn, ra) - x), \
-            lambda x: beta(s, mn) * (t2(s, mn, ra) - x), \
-            args = (s, t, mn, ra, at, a))
-        ]
-        ).transpose(), axis = 1)
+        return np.sum(np.array([dblquad(ep_integrand,
+                                        t1(s, ra),
+                                        tmid(s, ra),
+                                        lambda x: -beta(s) * (x - t1(s, ra)),
+                                        lambda x: beta(s) * (x - t1(s, ra)),
+                                        args = (s, t, ra, at, a)),
+                                dblquad(ep_integrand,
+                                        tmid(s, ra),
+                                        t2(s, ra),
+                                        lambda x: -beta(s) * (t2(s, ra) - x),
+                                        lambda x: beta(s) * (t2(s, ra) - x),
+                                        args = (s, t, ra, at, a))]).transpose(), axis = 1)
 
 def efullz(a, sqrtsnn, tauf, ntimes):
     # Define parameters
 
-    mn = 0.94
+    r0 = Constants.nucleonRadius
 
-    r0 = 1.12
+    ra = r0 * a**(1 / 3)
 
-    ra = r0 * a ** (1. / 3.)
-
-    at = np.pi * ra ** 2.
+    at = np.pi * ra**2
 
     # Calculate epsilon(t)
 
     # Set time array
-    timesMin = 1.1*t1(sqrtsnn, mn, ra) + tauf
-    timesMax = 3.*t2(sqrtsnn,mn,ra) + tauf
-    if(timesMax < 10.):
-        timesMax = 10.
+    timesMin = 1.1 * t1(sqrtsnn, ra) + tauf
+    timesMax = 3 * t2(sqrtsnn, ra) + tauf
+    if(timesMax < 10):
+        timesMax = 10
     times = np.logspace(np.log10(timesMin), np.log10(timesMax), ntimes)
     times = np.insert(times, 0, 0)
 
@@ -184,7 +166,7 @@ def efullz(a, sqrtsnn, tauf, ntimes):
 
     # Populate densities and errors arrays
     for i, t in enumerate(times):
-        x = ep_pieces(sqrtsnn, times[i], mn, ra, at, a, tauf)
+        x = ep_pieces(sqrtsnn, times[i], ra, at, a, tauf)
         ep_dens[i] = x[0]
 
     # Write to file
@@ -218,91 +200,76 @@ def efullz(a, sqrtsnn, tauf, ntimes):
     plt.tight_layout()
     plt.savefig(figfile)
 
-
     return
 
 ################################################################################
 # Definition of net-Baryon density
 
-def nb_pieces(s, t, mn, ra, at, a, tauf):
-    if t <= t1(s, mn, ra) + tauf:
-        return np.array([0., 0.])
-    elif t > t1(s, mn, ra) + tauf and t < ta(s, mn, ra, tauf):
-        return np.sum(np.array(
-            [
-            dblquad(nb_integrand, \
-                t1(s, mn, ra), \
-                x1(s, t, mn, ra, tauf), \
-                lambda x: -beta(s, mn) * (x - t1(s, mn, ra)), \
-                lambda x: beta(s, mn) * (x - t1(s, mn, ra)), \
-                args = (s, t, mn, ra, at, a)), \
-            dblquad(nb_integrand, \
-                x1(s, t, mn, ra, tauf), \
-                t - tauf, \
-                lambda x: -np.sqrt((t - x) ** 2. - tauf ** 2.), \
-                lambda x: np.sqrt((t - x) ** 2. - tauf ** 2.),\
-                args = (s, t, mn, ra, at, a))
-            ]
-        ).transpose(), axis = 1)
-    elif t >= ta(s, mn, ra, tauf) and t < t2(s, mn, ra) + tauf:
-        return np.sum(np.array(
-            [
-            dblquad(nb_integrand, \
-                t1(s, mn, ra), \
-                tmid(s, mn, ra), \
-                lambda x: -beta(s, mn) * (x - t1(s, mn, ra)), \
-                lambda x: beta(s, mn) * (x - t1(s, mn, ra)), \
-                args = (s, t, mn, ra, at, a)), \
-            dblquad(nb_integrand, \
-                tmid(s, mn, ra), \
-                x2(s, t, mn, ra, tauf), \
-                lambda x: -beta(s, mn) * (t2(s, mn, ra) - x), \
-                lambda x: beta(s, mn) * (t2(s, mn, ra) - x), \
-                args = (s, t, mn, ra, at, a)), \
-            dblquad(nb_integrand, \
-                x2(s, t, mn, ra, tauf), \
-                t - tauf, \
-                lambda x: -np.sqrt((t - x) ** 2. - tauf ** 2.), \
-                lambda x: np.sqrt((t - x) ** 2. - tauf ** 2.),\
-                args = (s, t, mn, ra, at, a))
-            ]
-        ).transpose(), axis = 1)
+def nb_pieces(s, t, ra, at, a, tauf):
+    if t <= t1(s, ra) + tauf:
+        return np.array([0, 0])
+    elif t > t1(s, ra) + tauf and t < ta(s, ra, tauf):
+        return np.sum(np.array([dblquad(nb_integrand,
+                                        t1(s, ra),
+                                        x1(s, ra, t, tauf),
+                                        lambda x: -beta(s) * (x - t1(s, ra)),
+                                        lambda x: beta(s) * (x - t1(s, ra)),
+                                        args = (s, t, ra, at, a)),
+                                dblquad(nb_integrand,
+                                        x1(s, ra, t, tauf),
+                                        t - tauf,
+                                        lambda x: -np.sqrt((t - x)**2 - tauf**2),
+                                        lambda x: np.sqrt((t - x)**2 - tauf**2),
+                                        args = (s, t, ra, at, a))]).transpose(), axis = 1)
+    elif t >= ta(s, ra, tauf) and t < t2(s, ra) + tauf:
+        return np.sum(np.array([dblquad(nb_integrand,
+                                        t1(s, ra),
+                                        tmid(s, ra),
+                                        lambda x: -beta(s) * (x - t1(s, ra)),
+                                        lambda x: beta(s) * (x - t1(s, ra)),
+                                        args = (s, t, ra, at, a)),
+                                dblquad(nb_integrand,
+                                        tmid(s, ra),
+                                        x2(s, ra, t, tauf),
+                                        lambda x: -beta(s) * (t2(s, ra) - x),
+                                        lambda x: beta(s) * (t2(s, ra) - x),
+                                        args = (s, t, ra, at, a)),
+                                dblquad(nb_integrand,
+                                        x2(s, ra, t, tauf),
+                                        t - tauf,
+                                        lambda x: -np.sqrt((t - x)**2 - tauf**2),
+                                        lambda x: np.sqrt((t - x)**2 - tauf**2),
+                                        args = (s, t, ra, at, a))]).transpose(), axis = 1)
     else:
-        return np.sum(np.array(
-        [
-        dblquad(nb_integrand, \
-            t1(s, mn, ra), \
-            tmid(s, mn, ra), \
-            lambda x: -beta(s, mn) * (x - t1(s, mn, ra)), \
-            lambda x: beta(s, mn) * (x - t1(s, mn, ra)), \
-            args = (s, t, mn, ra, at, a)), \
-        dblquad(nb_integrand, \
-            tmid(s, mn, ra), \
-            t2(s, mn, ra), \
-            lambda x: -beta(s, mn) * (t2(s, mn, ra) - x), \
-            lambda x: beta(s, mn) * (t2(s, mn, ra) - x), \
-            args = (s, t, mn, ra, at, a))
-        ]
-        ).transpose(), axis = 1)
+        return np.sum(np.array([dblquad(nb_integrand,
+                                        t1(s, ra),
+                                        tmid(s, ra),
+                                        lambda x: -beta(s) * (x - t1(s, ra)),
+                                        lambda x: beta(s) * (x - t1(s, ra)),
+                                        args = (s, t, ra, at, a)),
+                                dblquad(nb_integrand,
+                                        tmid(s, ra),
+                                        t2(s, ra),
+                                        lambda x: -beta(s) * (t2(s, ra) - x),
+                                        lambda x: beta(s) * (t2(s, ra) - x),
+                                        args = (s, t, ra, at, a))]).transpose(), axis = 1)
 
 def nbfullz(a, sqrtsnn, tauf, ntimes):
     # Define parameters
 
-    mn = 0.94
+    r0 = Constants.nucleonRadius
 
-    r0 = 1.12
+    ra = r0 * a**(1 / 3)
 
-    ra = r0 * a ** (1. / 3.)
-
-    at = np.pi * ra ** 2.
+    at = np.pi * ra**2
 
     # Calculate epsilon(t)
 
     # Set time array
-    timesMin = 1.1*t1(sqrtsnn, mn, ra) + tauf
-    timesMax = 3.*t2(sqrtsnn,mn,ra) + tauf
-    if(timesMax < 10.):
-        timesMax = 10.
+    timesMin = 1.1 * t1(sqrtsnn, ra) + tauf
+    timesMax = 3 * t2(sqrtsnn, ra) + tauf
+    if(timesMax < 10):
+        timesMax = 10
     times = np.logspace(np.log10(timesMin), np.log10(timesMax), ntimes)
     times = np.insert(times, 0, 0)
 
@@ -311,7 +278,7 @@ def nbfullz(a, sqrtsnn, tauf, ntimes):
 
     # Populate densities and errors arrays
     for i, t in enumerate(times):
-        x = nb_pieces(sqrtsnn, times[i], mn, ra, at, a, tauf)
+        x = nb_pieces(sqrtsnn, times[i], ra, at, a, tauf)
         nb_dens[i] = x[0]
 
     # Write to file
@@ -331,22 +298,21 @@ def nbfullz(a, sqrtsnn, tauf, ntimes):
 def quant_full_soln(z, a, sqrtsnn, tauf, ntimes):
 
     # Define parameters
-    mn = 0.94
-    r0 = 1.12
+    r0 = Constants.nucleonRadius
     ra = r0 * a ** (1. / 3.)
     at = np.pi * ra ** 2.
 
     # Set time array
-    timesMin = 1.1*t1(sqrtsnn, mn, ra) + tauf
-    timesMax = 3.*t2(sqrtsnn,mn,ra) + tauf
+    timesMin = 1.1*t1(sqrtsnn, ra) + tauf
+    timesMax = 3.*t2(sqrtsnn, ra) + tauf
     if(timesMax < 10.):
         timesMax = 10.
     times = np.logspace(np.log10(timesMin), np.log10(timesMax), ntimes)
     times = np.insert(times, 0, 0)
 
     # Import ep_dens and nB_dens data files into arrays
-    e_file = '/home/toddmmendenhall/mysite/energy_density/results/e-dens-vs-t.dat'
-    nB_file = '/home/toddmmendenhall/mysite/energy_density/results/nB-dens-vs-t.dat'
+    e_file = 'results/e-dens-vs-t.dat'
+    nB_file = 'results/nB-dens-vs-t.dat'
 
     e_dens = np.loadtxt(e_file, delimiter=',', usecols=1)
     nB_dens = np.loadtxt(nB_file, delimiter=',', usecols=1)
@@ -383,7 +349,7 @@ def quant_full_soln(z, a, sqrtsnn, tauf, ntimes):
 
     # Save t, e_dens, T, muB, muS, muQ to data files
     output = np.vstack((times, e_dens, traj, muQ)).transpose()
-    outfile = '/home/toddmmendenhall/mysite/energy_density/results/T-muB-muS-muQ-vs-t.dat'
+    outfile = 'results/T-muB-muS-muQ-vs-t.dat'
     myHeader = 't (fm/c), e (GeV/fm^3), T (MeV), muB (MeV), muS (MeV), muQ (MeV)'
 
     np.savetxt(outfile, output, delimiter=',', fmt='%12.3f', header=myHeader)
@@ -404,7 +370,7 @@ def quant_full_soln(z, a, sqrtsnn, tauf, ntimes):
 
     plt.title('$\sqrt{\mathrm{s_{NN}}}$ = ' + str(sqrtsnn) + ' GeV, Z = ' + str(int(z)) + ', A = ' + str(int(a)) + ', $\\tau_F$ = ' + str(tauf) + ' fm/c, Quantum Statistics')
 
-    figfile = '/home/toddmmendenhall/mysite/energy_density/results/results.pdf'
+    figfile = 'results/results.pdf'
 
     plt.tight_layout()
     plt.savefig(figfile)
@@ -417,14 +383,13 @@ def quant_full_soln(z, a, sqrtsnn, tauf, ntimes):
 def boltz_full_soln(z, a, sqrtsnn, tauf, ntimes):
 
     # Define parameters
-    mn = 0.94
-    r0 = 1.12
+    r0 = Constants.nucleonRadius
     ra = r0 * a ** (1. / 3.)
     at = np.pi * ra ** 2.
 
     # Set time array
-    timesMin = 1.1*t1(sqrtsnn, mn, ra) + tauf
-    timesMax = 3.*t2(sqrtsnn,mn,ra) + tauf
+    timesMin = 1.1*t1(sqrtsnn, ra) + tauf
+    timesMax = 3.*t2(sqrtsnn, ra) + tauf
     if(timesMax < 10.):
         timesMax = 10.
     times = np.logspace(np.log10(timesMin), np.log10(timesMax), ntimes)
