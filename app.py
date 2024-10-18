@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, send_from_directory
-from get_results2 import efullz, nbfullz, quant_full_soln, boltz_full_soln
+from density_calc import efullz, nbfullz
+from thermo_calc import quant_full_soln, boltz_full_soln
 from utilities import CalculationContext
 
 app = Flask(__name__)
