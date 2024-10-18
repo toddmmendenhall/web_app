@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, send_from_directory
 from get_results2 import efullz, nbfullz, quant_full_soln, boltz_full_soln
+from utilities import CalculationContext
 
 app = Flask(__name__)
 
@@ -9,24 +10,22 @@ def home():
 
 @app.route('/results', methods = ['POST'])
 def results():
-    z = float(request.form['atomicNum'])
-    a = float(request.form['massNum'])
-    sqrtsnn = float(request.form['colEn'])
-    tauf = float(request.form['formTime'])
-    stats = float(request.form['whichStats'])
-    ntimes = int(request.form['nTimes'])
+    cc = CalculationContext(int(request.form['atomicNum']),
+                            int(request.form['massNum']),
+                            float(request.form['colEn']),
+                            float(request.form['formTime']),
+                            request.form['whichStats'],
+                            int(request.form['nTimes']))
 
-    if (ntimes > 100):
-        ntimes = 100
+    efullz(*cc.get_data_for_density_calc())
 
-    efullz(a, sqrtsnn, tauf, ntimes)
+    nbfullz(*cc.get_data_for_density_calc())
 
-    nbfullz(a, sqrtsnn, tauf, ntimes)
+    if (cc.equationOfState == "quantum"):
+        quant_full_soln(*cc.get_data_for_thermo_calc())
 
-    if (stats == 0):
-        quant_full_soln(z, a, sqrtsnn, tauf, ntimes)
-    elif (stats == 1):
-        boltz_full_soln(z, a, sqrtsnn, tauf, ntimes)
+    if (cc.equationOfState == "boltzmann"):
+        boltz_full_soln(*cc.get_data_for_thermo_calc())
 
     return render_template('index.html', display_results = 1)
 
