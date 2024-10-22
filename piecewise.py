@@ -63,9 +63,11 @@ def piecewise_solution(integrand, s, t, ra, at, a, tauf) -> np.ndarray:
                                         args = (s, t, ra, at, a))]).transpose(), axis = 1)
 
 class PiecewiseSolution:
+    from utilities import CalculationContext
+
     def __init__(self, cc: CalculationContext, density: Integrand) -> None:
-        tMin = 1.1 * t1(cc.comCollisionEnergy, cc.nuclearRadius) + cc.partonFormationTime
-        tMax = 3 * t2(cc.comCollisionEnergy, cc.nuclearRadius) + cc.partonFormationTime
+        tMin = 1.1 * cc.t1 + cc.partonFormationTime
+        tMax = 3 * cc.t2 + cc.partonFormationTime
 
         if(tMax < 10):
             tMax = 10
@@ -73,12 +75,12 @@ class PiecewiseSolution:
         self.times = np.logspace(np.log10(tMin), np.log10(tMax), cc.numTimes)
         self.times = np.insert(self.times, 0, 0)
 
-        self.conditions = [self.times <= (cc.t1 + cc.partonFormationTime)]#,
-                        #    (self.times > (cc.t1 + cc.partonFormationTime)) * (self.times < cc.ta)]#,
-                        #    (self.times >= cc.ta) * (self.times < (cc.t2 + cc.partonFormationTime)),
-                        #    self.times >= (cc.t2 + cc.partonFormationTime)]
+        self.conditions = [self.times <= (cc.t1 + cc.partonFormationTime),
+                           (self.times > (cc.t1 + cc.partonFormationTime)) * (self.times < cc.ta),
+                           (self.times >= cc.ta) * (self.times < (cc.t2 + cc.partonFormationTime)),
+                           self.times >= (cc.t2 + cc.partonFormationTime)]
         
-        self.functions = [self.__zerothPiece]#, self.__firstPiece]#, self.__secondPiece, self.__thirdPiece]
+        self.functions = [self.__zerothPiece, self.__firstPiece, self.__secondPiece, self.__thirdPiece]
 
         self.integrand = density.integrand
         self.x1 = cc.x1
@@ -87,59 +89,74 @@ class PiecewiseSolution:
     def __zerothPiece(self, times: np.ndarray, cc: CalculationContext) -> np.ndarray:
         return np.zeros(times.size)
     
-    # def __firstPiece(self, times: np.ndarray, cc: CalculationContext):
-    #     vals = np.zeros(times.size)
-    #     lowerLeftZBound = lambda x: -cc.beta * (x - cc.t1)
-    #     lowerRightZBound = lambda x: cc.beta * (x - cc.t1)
-    #     upperLeftZBound = lambda x: -np.sqrt((t - x)**2 - cc.partonFormationTime**2)
-    #     upperRightZBound = lambda x: np.sqrt((t - x)**2 - cc.partonFormationTime**2)
+    def __firstPiece(self, times: np.ndarray, cc: CalculationContext):
+        vals = np.zeros(times.size)
 
-    #     upperXBound = self.x1(t)
+        lowerLeftZBound = lambda x: -cc.beta * (x - cc.t1)
+        lowerRightZBound = lambda x: cc.beta * (x - cc.t1)
 
-    #     lowerIntegral, lowerError = dblquad(self.integrand, cc.t1, upperXBound, lowerLeftZBound, lowerRightZBound, args = (t,))
-    #     upperIntegral, upperError = dblquad(self.integrand, upperXBound, t - cc.partonFormationTime, upperLeftZBound, upperRightZBound, args=(t,))
+        for i, t in enumerate(times):
+            upperLeftZBound = lambda x: -np.sqrt((t - x)**2 - cc.partonFormationTime**2)
+            upperRightZBound = lambda x: np.sqrt((t - x)**2 - cc.partonFormationTime**2)
 
-    #     return lowerIntegral + upperIntegral
+            upperXBound = self.x1(t)
+
+            lowerIntegral, lowerError = dblquad(self.integrand, cc.t1, upperXBound, lowerLeftZBound, lowerRightZBound, args = (t,))
+            upperIntegral, upperError = dblquad(self.integrand, upperXBound, t - cc.partonFormationTime, upperLeftZBound, upperRightZBound, args=(t,))
+
+            vals[i] = lowerIntegral + upperIntegral
+
+        return vals
+
     
-    def __secondPiece(self, t: np.float64, cc: CalculationContext):
+    def __secondPiece(self, times: np.ndarray, cc: CalculationContext):
+        vals = np.zeros(times.size)
+
         lowerLeftZBound = lambda x: -cc.beta * (x - cc.t1)
         lowerRightZBound = lambda x: cc.beta * (x - cc.t1)
         middleLeftZBound = lambda x: -cc.beta * (cc.t2 - x)
         middleRightZBound = lambda x: cc.beta * (cc.t2 - x)
-        upperLeftZBound = lambda x: -np.sqrt((t - x)**2 - cc.partonFormationTime**2)
-        upperRightZBound = lambda x: np.sqrt((t - x)**2 - cc.partonFormationTime**2)
 
-        upperXBound = self.x2(t)
+        for i, t in enumerate(times):
+            upperLeftZBound = lambda x: -np.sqrt((t - x)**2 - cc.partonFormationTime**2)
+            upperRightZBound = lambda x: np.sqrt((t - x)**2 - cc.partonFormationTime**2)
 
-        lowerIntegral, lowerError = dblquad(self.integrand, cc.t1, cc.tMid, lowerLeftZBound, lowerRightZBound, args = (t,))
-        middleIntegral, middleError = dblquad(self.integrand, cc.tMid, upperXBound, middleLeftZBound, middleRightZBound, args=(t,))
-        upperIntegral, upperError = dblquad(self.integrand, upperXBound, t - cc.partonFormationTime, upperLeftZBound, upperRightZBound, args=(t,))
+            upperXBound = self.x2(t)
 
-        return lowerIntegral + middleIntegral + upperIntegral
+            lowerIntegral, lowerError = dblquad(self.integrand, cc.t1, cc.tMid, lowerLeftZBound, lowerRightZBound, args = (t,))
+            middleIntegral, middleError = dblquad(self.integrand, cc.tMid, upperXBound, middleLeftZBound, middleRightZBound, args=(t,))
+            upperIntegral, upperError = dblquad(self.integrand, upperXBound, t - cc.partonFormationTime, upperLeftZBound, upperRightZBound, args=(t,))
+
+            vals[i] = lowerIntegral + middleIntegral + upperIntegral
+        
+        return vals
     
-    def __thirdPiece(self, t: np.float64, cc: CalculationContext):
+    def __thirdPiece(self, times: np.ndarray, cc: CalculationContext):
+        vals = np.zeros(times.size)
+
         lowerLeftZBound = lambda x: -cc.beta * (x - cc.t1)
         lowerRightZBound = lambda x: cc.beta * (x - cc.t1)
         upperLeftZBound = lambda x: -cc.beta * (cc.t2 - x)
         upperRightZBound = lambda x: cc.beta * (cc.t2 - x)
 
-        lowerIntegral, lowerError = dblquad(self.integrand, cc.t1, cc.tMid, lowerLeftZBound, lowerRightZBound, args = (t,))
-        upperIntegral, upperError = dblquad(self.integrand, cc.tMid, cc.t2, upperLeftZBound, upperRightZBound, args = (t,))
+        for i, t in enumerate(times):
+            lowerIntegral, lowerError = dblquad(self.integrand, cc.t1, cc.tMid, lowerLeftZBound, lowerRightZBound, args = (t,))
+            upperIntegral, upperError = dblquad(self.integrand, cc.tMid, cc.t2, upperLeftZBound, upperRightZBound, args = (t,))
 
-        return lowerIntegral + upperIntegral
+            vals[i] = lowerIntegral + upperIntegral
+
+        return vals
     
     def calculate(self, cc: CalculationContext) -> np.ndarray:
-        arguments = (cc,)
-        return np.piecewise(self.times, self.conditions, self.functions, arguments)
+        return np.piecewise(self.times, self.conditions, self.functions, cc)
 
 
 if __name__ == "__main__":
     cc = CalculationContext(79, 197, 200, 0.3, "boltzmann", 10)
-
     e = EnergyDensity(cc)
 
     ps = PiecewiseSolution(cc, e)
-    print(ps.times)
-    print(ps.conditions)
-    print(ps.functions)
-    print(ps.calculate(cc))
+    # print(ps.conditions)
+    # print(ps.functions)
+    x = ps.calculate(cc)
+    print(x)

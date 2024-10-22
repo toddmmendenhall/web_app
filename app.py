@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, send_from_directory
 from density_calc import efullz, nbfullz
 from thermo_calc import quant_full_soln, boltz_full_soln
 from utilities import CalculationContext
+from piecewise import PiecewiseSolution
+from differential_density import EnergyDensity, NetBaryonDensity
 
 app = Flask(__name__)
 
@@ -17,6 +19,15 @@ def results():
                             float(request.form['formTime']),
                             request.form['whichStats'],
                             int(request.form['nTimes']))
+    
+    # ed = EnergyDensity(cc)
+    # nd = NetBaryonDensity(cc)
+
+    # ps = PiecewiseSolution(cc, ed)
+    # ps.calculate(cc)
+
+    # ps = PiecewiseSolution(cc, nd)
+    # ps.calculate(cc)
 
     efullz(*cc.get_data_for_density_calc())
 
