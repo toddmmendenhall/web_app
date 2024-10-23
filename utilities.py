@@ -6,6 +6,7 @@ class Constants:
     nucleonRadius = 1.12    # fm
     hbarTimesC = 0.19732698 # GeV * fm
     MeVPerGeV = 1000
+    piSquared = np.pi**2
 
 
 class CalculationContext:

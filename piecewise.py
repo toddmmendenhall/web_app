@@ -148,7 +148,7 @@ class PiecewiseSolution:
         return vals
     
     def calculate(self, cc: CalculationContext) -> np.ndarray:
-        return np.piecewise(self.times, self.conditions, self.functions, cc)
+        self.densities = np.piecewise(self.times, self.conditions, self.functions, cc)
 
 
 if __name__ == "__main__":
@@ -158,5 +158,4 @@ if __name__ == "__main__":
     ps = PiecewiseSolution(cc, e)
     # print(ps.conditions)
     # print(ps.functions)
-    x = ps.calculate(cc)
-    print(x)
+    ps.calculate(cc)
