@@ -164,7 +164,15 @@ def boltz_full_soln(z, a, sqrtsnn, tauf, ntimes):
 
     return
 
-class NonInteractingMasslessQuantumEOSFullSolution:
+class EOS:
+    thermoVars: np.ndarray
+    times: np.ndarray
+    energyDensities: np.ndarray
+    netBaryonDensities: np.ndarray
+    netChargeDensities: np.ndarray
+    netStrangenessDensities: np.ndarray
+
+class NonInteractingMasslessQuantumEOSFullSolution(EOS):
     from utilities import CalculationContext, Constants
     from piecewise import PiecewiseSolution
 
@@ -203,7 +211,7 @@ class NonInteractingMasslessQuantumEOSFullSolution:
         self.thermoVars = np.insert(self.thermoVars, 2, muQ, axis=0)
 
 
-class NonInteractingMasslessBoltzmannEOSFullSolution:
+class NonInteractingMasslessBoltzmannEOSFullSolution(EOS):
     from utilities import CalculationContext, Constants
     from piecewise import PiecewiseSolution
 
