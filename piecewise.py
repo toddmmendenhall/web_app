@@ -1,69 +1,10 @@
 import numpy as np
 from scipy.integrate import dblquad
-from density_calc import t1, ta, x1, beta, tmid, x2, t2
-from utilities import CalculationContext
-from differential_density import Integrand, EnergyDensity, NetBaryonDensity
 
-def piecewise_solution(integrand, s, t, ra, at, a, tauf) -> np.ndarray:
-    startTime = t1(s, ra)
-    midTime = tmid(s, ra)
-    finalTime = t2(s, ra)
-    relativisticVelocity = beta(s)
-
-    if t <= startTime + tauf:
-        return np.array([0, 0])
-
-    elif t > startTime + tauf and t < ta(s, ra, tauf):
-        
-        return np.sum(np.array([dblquad(integrand,
-                                        startTime,
-                                        x1(s, ra, t, tauf),
-                                        lambda x: -relativisticVelocity * (x - startTime),
-                                        lambda x: relativisticVelocity * (x - startTime),
-                                        args = (s, t, ra, at, a)),
-                                dblquad(integrand,
-                                        x1(s, ra, t, tauf),
-                                        t - tauf,
-                                        lambda x: -np.sqrt((t - x)**2 - tauf**2),
-                                        lambda x: np.sqrt((t - x)**2 - tauf**2),
-                                        args = (s, t, ra, at, a))]).transpose(), axis = 1)
-
-    elif t >= ta(s, ra, tauf) and t < finalTime + tauf:
-        return np.sum(np.array([dblquad(integrand,
-                                        startTime,
-                                        midTime,
-                                        lambda x: -relativisticVelocity * (x - startTime),
-                                        lambda x: relativisticVelocity * (x - startTime),
-                                        args = (s, t, ra, at, a)),
-                                dblquad(integrand,
-                                        midTime,
-                                        x2(s, ra, t, tauf),
-                                        lambda x: -relativisticVelocity * (finalTime - x),
-                                        lambda x: relativisticVelocity * (finalTime - x),
-                                        args = (s, t, ra, at, a)),
-                                dblquad(integrand,
-                                        x2(s, ra, t, tauf),
-                                        t - tauf,
-                                        lambda x: -np.sqrt((t - x)**2 - tauf**2),
-                                        lambda x: np.sqrt((t - x)**2 - tauf**2),
-                                        args = (s, t, ra, at, a))]).transpose(), axis = 1)
-
-    else:
-        return np.sum(np.array([dblquad(integrand,
-                                        startTime,
-                                        midTime,
-                                        lambda x: -relativisticVelocity * (x - startTime),
-                                        lambda x: relativisticVelocity * (x - startTime),
-                                        args = (s, t, ra, at, a)),
-                                dblquad(integrand,
-                                        midTime,
-                                        finalTime,
-                                        lambda x: -relativisticVelocity * (finalTime - x),
-                                        lambda x: relativisticVelocity * (finalTime - x),
-                                        args = (s, t, ra, at, a))]).transpose(), axis = 1)
 
 class PiecewiseSolution:
     from utilities import CalculationContext
+    from differential_density import Integrand
 
     def __init__(self, cc: CalculationContext, density: Integrand) -> None:
         tMin = 1.1 * cc.t1 + cc.partonFormationTime
@@ -85,9 +26,11 @@ class PiecewiseSolution:
         self.integrand = density.integrand
         self.x1 = cc.x1
         self.x2 = cc.x2
+
     
     def __zerothPiece(self, times: np.ndarray, cc: CalculationContext) -> np.ndarray:
         return np.zeros(times.size)
+    
     
     def __firstPiece(self, times: np.ndarray, cc: CalculationContext):
         vals = np.zeros(times.size)
@@ -131,6 +74,7 @@ class PiecewiseSolution:
         
         return vals
     
+    
     def __thirdPiece(self, times: np.ndarray, cc: CalculationContext):
         vals = np.zeros(times.size)
 
@@ -147,11 +91,16 @@ class PiecewiseSolution:
 
         return vals
     
+    
     def calculate(self, cc: CalculationContext) -> np.ndarray:
         self.densities = np.piecewise(self.times, self.conditions, self.functions, cc)
 
 
 if __name__ == "__main__":
+    from utilities import CalculationContext
+    from differential_density import Integrand, EnergyDensity, NetBaryonDensity
+
+
     cc = CalculationContext(79, 197, 200, 0.3, "boltzmann", 10)
     e = EnergyDensity(cc)
 
