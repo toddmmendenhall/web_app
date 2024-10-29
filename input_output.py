@@ -1,4 +1,5 @@
 import numpy as np
+import os
 
 
 class IO:
@@ -7,10 +8,11 @@ class IO:
 
     def __init__(self, eos: EOS):
         self.data = np.vstack([eos.times, eos.energyDensities, eos.netBaryonDensities, *(eos.thermoVars[i] for i in range(4))])
+        self.outputDir = os.getcwd() + "/mysite/v2/results/"
 
     def write_output(self):
         header = 't (fm/c), eDens (GeV/fm^3), nbDens (fm^-3), temp (MeV), muB (MeV), muQ (MeV), muS(MeV)'
-        outputFile = 'results/time_evolution.csv'
+        outputFile = self.outputDir + 'time_evolution.csv'
         np.savetxt(outputFile, self.data.T, delimiter = ",", fmt = "%10.3e", header = header)
 
     def make_plots(self, cc:CalculationContext):
@@ -38,7 +40,7 @@ class IO:
         legendTitle = "$\sqrt{s_{\\rm NN}}$ = " + str(cc.comCollisionEnergy) + ' GeV, A = ' + str(int(cc.massNum)) + ', $\\tau_{\\rm F}$ = ' + str(cc.partonFormationTime) + ' fm/c'
         ax.legend(frameon=False, title = legendTitle)
 
-        figfile = 'results/e-vs-t.pdf'
+        figfile = self.outputDir + 'e-vs-t.pdf'
 
         plt.tight_layout()
         plt.savefig(figfile)
@@ -65,7 +67,7 @@ class IO:
 
         plt.title('$\sqrt{s_{\\rm NN}}$ = ' + str(cc.comCollisionEnergy) + ' GeV, Z = ' + str(int(cc.atomicNum)) + ', A = ' + str(int(cc.massNum)) + ', $\\tau_{\\rm F}$ = ' + str(cc.partonFormationTime) + ' fm/c, Quantum Statistics')
 
-        figfile = 'results/phase_diagram_trajectory.pdf'
+        figfile = self.outputDir + 'phase_diagram_trajectory.pdf'
 
         plt.tight_layout()
         plt.savefig(figfile)
