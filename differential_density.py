@@ -44,6 +44,9 @@ class Integrand:
     def integrand(self, z0, x, t):
         pass
 
+    def integrand1Var(self, y):
+        pass
+
 
 class EnergyDensity(Integrand):
     def __init__(self, cc: CalculationContext):
@@ -53,6 +56,10 @@ class EnergyDensity(Integrand):
     def integrand(self, z0, x, t):
         rapidity = super().y0(z0, x, t)
         return self.constantTerm / (t - x) * super().dmtdyhad(rapidity) * np.cosh(rapidity)**3
+    
+    def integrand1Var(self, y):
+        # This is divided by a cosh(y) so we don't have to later
+        return self.constantTerm * super().dmtdyhad(y) * np.cosh(y)**2
 
 
 class NetBaryonDensity(Integrand):
@@ -63,6 +70,11 @@ class NetBaryonDensity(Integrand):
     def integrand(self, z0, x, t):
         rapidity = super().y0(z0, x, t)
         return self.constantTerm / (t - x) * super().dnbdy(rapidity) * np.cosh(rapidity)**2
+    
+
+    def integrand1Var(self, y):
+        # This is divided by a cosh(y) so we don't have to later
+        return self.constantTerm * super().dnbdy(y) * np.cosh(y)
     
 
 if __name__ == "__main__":
