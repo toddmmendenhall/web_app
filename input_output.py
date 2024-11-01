@@ -8,7 +8,8 @@ class IO:
 
     def __init__(self, eos: EOS):
         self.data = np.vstack([eos.times, eos.energyDensities, eos.netBaryonDensities, *(eos.thermoVars[i] for i in range(4))])
-        self.outputDir = os.getcwd() + "/mysite/v2/results/"
+        self.outputDir = os.getcwd() + "/results/"# + "/mysite/v2/results/"
+        print("outputdir", self.outputDir)
 
     def write_output(self):
         header = 't (fm/c), eDens (GeV/fm^3), nbDens (fm^-3), temp (MeV), muB (MeV), muQ (MeV), muS(MeV)'

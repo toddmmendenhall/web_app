@@ -11,13 +11,14 @@ class Constants:
 
 class CalculationContext:
     def __init__(self, atomicNum: int, massNum: int, comCollisionEnergy: float,
-                 partonFormationTime: float, eos: str, numTimes: int) -> None:
+                 partonFormationTime: float, eos: str, numTimes: int, partonProduction: str) -> None:
         self.atomicNum: int = atomicNum                         #
         self.massNum: int = massNum                             #
         self.comCollisionEnergy: float = comCollisionEnergy     # GeV
         self.partonFormationTime: float = partonFormationTime   # fm
         self.equationOfState: str = eos                         #
         self.numTimes: int = numTimes                           #
+        self.partonProduction: str = partonProduction           #
 
         self.ensure_valid_data()
 
@@ -30,9 +31,9 @@ class CalculationContext:
 
         self.crossingTime = 2 * self.nuclearRadius / np.sinh(self.projectileRapidity)
 
-        self.t1 = self.crossingTime / 6
+        self.t1 = 0# self.crossingTime / 6
 
-        self.t2 = 5 / 6 * self.crossingTime
+        self.t2 = self.crossingTime#5 / 6 * self.crossingTime
 
         self.t21 = self.t2 - self.t1
 

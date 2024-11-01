@@ -21,15 +21,16 @@ def results():
                             float(request.form['colEn']),
                             float(request.form['formTime']),
                             request.form['whichStats'],
-                            int(request.form['nTimes']))
+                            int(request.form['nTimes']),
+                            request.form['partonProduction'])
     
     ed = EnergyDensity(cc)
     nd = NetBaryonDensity(cc)
 
     pse = PiecewiseSolution(cc, ed)
-    pse.calculate(cc)
+    pse.calculate()
     psn = PiecewiseSolution(cc, nd)
-    psn.calculate(cc)
+    psn.calculate()
 
     if (cc.equationOfState == "quantum"):
         eos = NonInteractingMasslessQuantumEOSFullSolution(cc, pse, psn)

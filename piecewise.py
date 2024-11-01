@@ -54,8 +54,8 @@ class PiecewiseSolution:
         middleRightZBound = lambda x: self.cc.beta * (self.cc.t2 - x)
 
         for i, t in enumerate(times):
-            upperLeftZBound = lambda x: -np.sqrt((t - x)**2 - cc.partonFormationTime**2)
-            upperRightZBound = lambda x: np.sqrt((t - x)**2 - cc.partonFormationTime**2)
+            upperLeftZBound = lambda x: -np.sqrt((t - x)**2 - self.cc.partonFormationTime**2)
+            upperRightZBound = lambda x: np.sqrt((t - x)**2 - self.cc.partonFormationTime**2)
 
             upperXBound = self.x2(t)
 
@@ -190,7 +190,7 @@ if __name__ == "__main__":
     from differential_density import Integrand, EnergyDensity, NetBaryonDensity
 
 
-    cc = CalculationContext(79, 197, 2, 0.1, "boltzmann", 50)
+    cc = CalculationContext(79, 197, 2, 0.1, "boltzmann", 50, "uniform")
     e = EnergyDensity(cc)
 
     # ps1 = PiecewiseSolutionSingleIntegral(cc, e)

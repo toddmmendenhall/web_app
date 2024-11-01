@@ -1,10 +1,14 @@
 import numpy as np
 from scipy.optimize import fsolve
 from utilities import CalculationContext, Constants
+from densities.spacetime_production import SpacetimeProduction, UniformDistribution, SemiCircleDistribution
 
 
 class Integrand:
     def __init__(self, cc: CalculationContext):
+        self.cc = cc
+        self.__setPartonProductionDistribution()
+
         self.constantTerm = 2 / (cc.transverseOverlapArea * cc.beta * cc.t21**2)
 
         self.detdy0old = 0.456 * 2 * cc.massNum * np.log(cc.comCollisionEnergy / 2.35)
@@ -21,6 +25,16 @@ class Integrand:
 
         self.dnbdy0 = 2 * cc.massNum / (np.sqrt(2 * np.pi) * self.sigmab) * np.exp(-(self.yb / self.sigmab)**2 / 2)
     
+
+    def __setPartonProductionDistribution(self) -> None:
+        match self.cc.partonProduction:
+            case "uniform":
+                self.spacetimeProductionProfile = UniformDistribution(self.cc)
+            case "semicircle":
+                self.spacetimeProductionProfile = SemiCircleDistribution(self.cc)
+            case _:
+                self.spacetimeProductionProfile = UniformDistribution(self.cc)
+
 
     def get_data(self) -> list:
         return [self.constantTerm, self.detdy0old, self.detdy0, self.sigmab, self.yb, self.sigmahad, self.dnbdy0]
@@ -55,7 +69,7 @@ class EnergyDensity(Integrand):
 
     def integrand(self, z0, x, t):
         rapidity = super().y0(z0, x, t)
-        return self.constantTerm / (t - x) * super().dmtdyhad(rapidity) * np.cosh(rapidity)**3
+        return self.spacetimeProductionProfile.constantTerm / (t - x) * self.spacetimeProductionProfile.g(z0, x, t) * super().dmtdyhad(rapidity) * np.cosh(rapidity)**3
     
     def integrand1Var(self, y):
         # This is divided by a cosh(y) so we don't have to later
@@ -69,7 +83,7 @@ class NetBaryonDensity(Integrand):
 
     def integrand(self, z0, x, t):
         rapidity = super().y0(z0, x, t)
-        return self.constantTerm / (t - x) * super().dnbdy(rapidity) * np.cosh(rapidity)**2
+        return self.spacetimeProductionProfile.constantTerm / (t - x) * self.spacetimeProductionProfile.g(z0, x, t) * super().dnbdy(rapidity) * np.cosh(rapidity)**2
     
 
     def integrand1Var(self, y):
@@ -78,7 +92,7 @@ class NetBaryonDensity(Integrand):
     
 
 if __name__ == "__main__":
-    cc = CalculationContext(79, 197, 200.0, 0.1, "quantum", 10)
+    cc = CalculationContext(79, 197, 200.0, 0.1, "quantum", 10, "semicircle")
     # integrand = Integrand(cc)
 
     # print(integrand.get_data())

@@ -17,16 +17,16 @@ class NonInteractingMasslessQuantumEOSFullSolution(EOS):
     from piecewise import PiecewiseSolution
 
     def __init__(self, cc: CalculationContext, energySoln: PiecewiseSolution, netBaryonSoln: PiecewiseSolution) -> None:
-        self.times = energySoln.times
+        self.times = cc.times
 
         self.energyDensities = energySoln.densities
         self.netBaryonDensities = netBaryonSoln.densities
 
         # Define nQ_dens and nS_dens arrays
         self.netChargeDensities = cc.atomicNum / cc.massNum * netBaryonSoln.densities
-        self.netStrangenessDensities = np.zeros(len(energySoln.times))
+        self.netStrangenessDensities = np.zeros(len(self.times))
         
-        self.thermoVars = np.zeros((len(energySoln.times), 3))
+        self.thermoVars = np.zeros((len(self.times), 3))
 
     # Calculate T, muB, muS, and muQ arrays
     def __equations(self, x, ep, nB, nQ):
@@ -56,16 +56,16 @@ class NonInteractingMasslessBoltzmannEOSFullSolution(EOS):
     from piecewise import PiecewiseSolution
 
     def __init__(self, cc: CalculationContext, energySoln: PiecewiseSolution, netBaryonSoln: PiecewiseSolution) -> None:
-        self.times = energySoln.times
+        self.times = cc.times
 
         self.energyDensities = energySoln.densities
         self.netBaryonDensities = netBaryonSoln.densities
 
         # Define nQ_dens and nS_dens arrays
         self.netChargeDensities = cc.atomicNum / cc.massNum * netBaryonSoln.densities
-        self.netStrangenessDensities = np.zeros(len(energySoln.times))
+        self.netStrangenessDensities = np.zeros(len(self.times))
         
-        self.thermoVars = np.zeros((len(energySoln.times), 3))
+        self.thermoVars = np.zeros((len(self.times), 3))
 
     # Calculate T, muB, muS, and muQ arrays
     def __equations(self, x, ep, nB, nQ):
