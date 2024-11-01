@@ -40,6 +40,18 @@ class CalculationContext:
 
         self.ta = self.tMid + np.sqrt(self.partonFormationTime**2 + (self.beta * self.t21 / 2)**2)
 
+        self.__setTimes()
+
+    def __setTimes(self):
+        tMin = self.t1 + self.partonFormationTime
+        tMax = 3 * self.t2 + self.partonFormationTime
+
+        if(tMax < 10):
+            tMax = 10
+
+        self.times = np.logspace(np.log10(tMin), np.log10(tMax), self.numTimes)
+        self.times = np.insert(self.times, 0, 0)
+
 
     def get_data(self) -> list:
         return [self.atomicNum, self.massNum, self.comCollisionEnergy,
@@ -55,8 +67,8 @@ class CalculationContext:
         if self.numTimes < 1:
             self.numTimes = 1
 
-        if self.numTimes > 100:
-            self.numTimes = 100
+        if self.numTimes > 300:
+            self.numTimes = 300
     
     def get_data_for_density_calc(self) -> list:
         return [self.massNum, self.comCollisionEnergy, self.partonFormationTime, self.numTimes]
