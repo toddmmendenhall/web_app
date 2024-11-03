@@ -24,24 +24,17 @@ class CalculationContext:
 
         self.nuclearRadius: float = Constants.nucleonRadius * self.massNum**(1/3)
         self.transverseOverlapArea: float = np.pi * self.nuclearRadius**2
-
         self.projectileRapidity = np.arccosh(self.comCollisionEnergy / (2 * Constants.nucleonMass))
-
         self.beta = np.tanh(self.projectileRapidity)
-
         self.crossingTime = 2 * self.nuclearRadius / np.sinh(self.projectileRapidity)
-
-        self.t1 = 0# self.crossingTime / 6
-
-        self.t2 = self.crossingTime#5 / 6 * self.crossingTime
-
+        self.t1 = self.crossingTime / 6
+        self.t2 = 5 / 6 * self.crossingTime
         self.t21 = self.t2 - self.t1
-
         self.tMid = (self.t1 + self.t2) / 2
-
         self.ta = self.tMid + np.sqrt(self.partonFormationTime**2 + (self.beta * self.t21 / 2)**2)
 
         self.__setTimes()
+        self.__setPrecision()
 
     def __setTimes(self):
         tMin = self.t1 + self.partonFormationTime
@@ -52,6 +45,17 @@ class CalculationContext:
 
         self.times = np.logspace(np.log10(tMin), np.log10(tMax), self.numTimes)
         self.times = np.insert(self.times, 0, 0)
+        self.times = np.round(self.times, 9)
+    
+
+    def __setPrecision(self) -> None:
+        precision = 9
+        self.partonFormationTime = round(self.partonFormationTime, precision)
+        self.t1 = round(self.t1, precision)
+        self.t2 = round(self.t2, precision)
+        self.t21 = round(self.t21, precision)
+        self.tMid = round(self.tMid, precision)
+        self.ta = round(self.ta, precision)
 
 
     def get_data(self) -> list:
