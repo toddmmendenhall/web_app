@@ -22,7 +22,8 @@ class UniformDistribution(SpacetimeProduction):
 class SemiCircleDistribution(SpacetimeProduction):
     def __init__(self, cc: CalculationContext) -> None:
         super().__init__(cc)
-        self.constantTerm = 24 / (np.pi * self.cc.transverseOverlapArea * self.cc.beta**2 * self.cc.crossingTime**3)
+        timeTerm = 1 / 3 * self.cc.tMid**3  - self.cc.tMid**2 * self.cc.t1 + self.cc.tMid * self.cc.t1**2
+        self.constantTerm = 1 / (np.pi * self.cc.transverseOverlapArea * self.cc.beta**2 * timeTerm)
 
     def g(self, z: float, x: float, t: float) -> float:
         return np.sqrt((self.cc.beta * x)**2 - z**2)
