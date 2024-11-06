@@ -38,6 +38,7 @@ def results():
 def view_energy_density():
     return send_from_directory('results', 'e_vs_t.png')
 
+
 @app.route('/results/view_trajectory')
 def view_trajectory():
     return send_from_directory('results', 'phase_diagram_trajectory.png')
