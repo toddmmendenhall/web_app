@@ -1,32 +1,21 @@
 import numpy as np
 from scipy.optimize import fsolve
 from utilities import Constants
+from calc_profile import CalcProfile
 
 
-class EOS:
-    thermoVars: np.ndarray
-    times: np.ndarray
-    energyDensities: np.ndarray
-    netBaryonDensities: np.ndarray
-    netChargeDensities: np.ndarray
-    netStrangenessDensities: np.ndarray
-
-
-class NonInteractingMasslessQuantumEOSFullSolution(EOS):
-    from utilities import CalculationContext, Constants
-    from piecewise import PiecewiseSolution
-
-    def __init__(self, cc: CalculationContext, energySoln: PiecewiseSolution, netBaryonSoln: PiecewiseSolution) -> None:
-        self.times = energySoln.times
-
-        self.energyDensities = energySoln.densities
-        self.netBaryonDensities = netBaryonSoln.densities
+class NonInteractingMasslessQuantumEOSFullSolution:
+    def __init__(self, cp: CalcProfile, es: np.ndarray, nBs: np.ndarray) -> None:
+        self.es = es
+        self.nBs = nBs
 
         # Define nQ_dens and nS_dens arrays
-        self.netChargeDensities = cc.atomicNum / cc.massNum * netBaryonSoln.densities
-        self.netStrangenessDensities = np.zeros(len(energySoln.times))
+        self.nQs = cp.z / cp.a * nBs
+        self.nSs = np.zeros(es.size)
         
-        self.thermoVars = np.zeros((len(energySoln.times), 3))
+        self.thermoVars = np.zeros((es.size, 3))
+
+        self.calculate()
 
     # Calculate T, muB, muS, and muQ arrays
     def __equations(self, x, ep, nB, nQ):
@@ -39,8 +28,8 @@ class NonInteractingMasslessQuantumEOSFullSolution(EOS):
         return [eq1, eq2, eq3]
 
     def calculate(self):
-        for i in range(self.times.size):
-            args = (self.energyDensities[i], self.netBaryonDensities[i], self.netChargeDensities[i])
+        for i in range(self.es.size):
+            args = (self.es[i], self.nBs[i], self.nSs[i])
             self.thermoVars[i] = fsolve(self.__equations, x0 = np.array([0.3, 0.9, 0.3]), args = args, maxfev = 1000)
 
         self.thermoVars = self.thermoVars * Constants.MeVPerGeV
@@ -51,21 +40,18 @@ class NonInteractingMasslessQuantumEOSFullSolution(EOS):
         self.thermoVars = np.insert(self.thermoVars, 2, muQ, axis=0)
 
 
-class NonInteractingMasslessBoltzmannEOSFullSolution(EOS):
-    from utilities import CalculationContext, Constants
-    from piecewise import PiecewiseSolution
-
-    def __init__(self, cc: CalculationContext, energySoln: PiecewiseSolution, netBaryonSoln: PiecewiseSolution) -> None:
-        self.times = energySoln.times
-
-        self.energyDensities = energySoln.densities
-        self.netBaryonDensities = netBaryonSoln.densities
+class NonInteractingMasslessBoltzmannEOSFullSolution:
+    def __init__(self, cp: CalcProfile, es: np.ndarray, nBs: np.ndarray) -> None:
+        self.es = es
+        self.nBs = nBs
 
         # Define nQ_dens and nS_dens arrays
-        self.netChargeDensities = cc.atomicNum / cc.massNum * netBaryonSoln.densities
-        self.netStrangenessDensities = np.zeros(len(energySoln.times))
+        self.nQs = cp.z / cp.a * nBs
+        self.nSs = np.zeros(es.size)
         
-        self.thermoVars = np.zeros((len(energySoln.times), 3))
+        self.thermoVars = np.zeros((es.size, 3))
+
+        self.calculate()
 
     # Calculate T, muB, muS, and muQ arrays
     def __equations(self, x, ep, nB, nQ):
@@ -78,8 +64,8 @@ class NonInteractingMasslessBoltzmannEOSFullSolution(EOS):
         return [eq1, eq2, eq3]
 
     def calculate(self):
-        for i in range(self.times.size):
-            args = (self.energyDensities[i], self.netBaryonDensities[i], self.netChargeDensities[i])
+        for i in range(self.es.size):
+            args = (self.es[i], self.nBs[i], self.nSs[i])
             self.thermoVars[i] = fsolve(self.__equations, x0 = np.array([0.3, 0.9, 0.3]), args = args, maxfev = 1000)
 
         self.thermoVars = self.thermoVars * Constants.MeVPerGeV

@@ -1,25 +1,28 @@
+from calc_profile import CalcProfile
+from differential_density import EnergyDensity, NetBaryonDensity
+from eos.equation_of_state import EquationOfState
 import numpy as np
 import os
 
 
 class IO:
-    from thermo_calc import EOS
-    from utilities import CalculationContext
+    def __init__(self, cp: CalcProfile, e: EnergyDensity, nB: NetBaryonDensity, eos: EquationOfState) -> None:
+        self.data = np.vstack([cp.times, e.densities, nB.densities, *(eos.get_data() for i in range(4))])
+        self.outputDir = os.getcwd() + "/results/"#mysite/v2/results/"
 
-    def __init__(self, eos: EOS):
-        self.data = np.vstack([eos.times, eos.energyDensities, eos.netBaryonDensities, *(eos.thermoVars[i] for i in range(4))])
-        self.outputDir = os.getcwd() + "/mysite/v2/results/"
+        self.write_output()
+        self.make_plots(cp)
 
     def write_output(self):
         header = 't (fm/c), eDens (GeV/fm^3), nbDens (fm^-3), temp (MeV), muB (MeV), muQ (MeV), muS(MeV)'
         outputFile = self.outputDir + 'time_evolution.csv'
         np.savetxt(outputFile, self.data.T, delimiter = ",", fmt = "%10.3e", header = header)
 
-    def make_plots(self, cc:CalculationContext):
-        self.__make_density_plot(cc)
-        self.__make_thermo_plot(cc)
+    def make_plots(self, cp: CalcProfile):
+        self.__make_density_plot(cp)
+        self.__make_thermo_plot(cp)
 
-    def __make_density_plot(self, cc: CalculationContext):
+    def __make_density_plot(self, cp: CalcProfile):
         import matplotlib.pyplot as plt
 
         fig, ax = plt.subplots()
@@ -37,7 +40,7 @@ class IO:
         ax.set_xlabel("t (fm/c)")
         ax.set_ylabel("$\\rm{\epsilon}(t)$ (GeV/fm$^3$)")
 
-        legendTitle = "$\sqrt{s_{\\rm NN}}$ = " + str(cc.comCollisionEnergy) + ' GeV, A = ' + str(int(cc.massNum)) + ', $\\tau_{\\rm F}$ = ' + str(cc.partonFormationTime) + ' fm/c'
+        legendTitle = "$\sqrt{s_{\\rm NN}}$ = " + str(cp.s) + ' GeV, A = ' + str(int(cp.a)) + ', $\\tau_{\\rm F}$ = ' + str(cp.tform) + ' fm/c'
         ax.legend(frameon=False, title = legendTitle)
 
         figfile = self.outputDir + 'e-vs-t.pdf'
@@ -45,7 +48,7 @@ class IO:
         plt.tight_layout()
         plt.savefig(figfile)
 
-    def __make_thermo_plot(self, cc: CalculationContext):
+    def __make_thermo_plot(self, cp: CalcProfile):
         import matplotlib.pyplot as plt
 
         # Plot and save a T-muB trajectory figure
@@ -65,7 +68,7 @@ class IO:
         ax.set_xlabel('$\mu_{\\rm B}$ (MeV)')
         ax.set_ylabel('T (MeV)')
 
-        plt.title('$\sqrt{s_{\\rm NN}}$ = ' + str(cc.comCollisionEnergy) + ' GeV, Z = ' + str(int(cc.atomicNum)) + ', A = ' + str(int(cc.massNum)) + ', $\\tau_{\\rm F}$ = ' + str(cc.partonFormationTime) + ' fm/c, Quantum Statistics')
+        plt.title('$\sqrt{s_{\\rm NN}}$ = ' + str(cp.s) + ' GeV, Z = ' + str(int(cp.z)) + ', A = ' + str(int(cp.a)) + ', $\\tau_{\\rm F}$ = ' + str(cp.tform) + ' fm/c, Quantum Statistics')
 
         figfile = self.outputDir + 'phase_diagram_trajectory.pdf'
 

@@ -75,12 +75,7 @@ class CalculationContext:
     
     def get_data_for_thermo_calc(self) -> list:
         return [self.atomicNum] + self.get_data_for_density_calc()
-    
-    def x1(self, t):
-        return (t - self.beta**2 * self.t1 - np.sqrt(self.beta**2 * ((t - self.t1)**2 - self.partonFormationTime**2) + self.partonFormationTime**2)) / (1 - self.beta**2)
 
-    def x2(self, t):
-            return (t - self.beta**2 * self.t2 - np.sqrt(self.beta**2 * ((t - self.t2)**2 - self.partonFormationTime**2) + self.partonFormationTime**2)) / (1 - self.beta**2)
 
 if __name__ == "__main__":
     cc = CalculationContext(79, 197, 50, 0.3, "boltzmann", 10)
