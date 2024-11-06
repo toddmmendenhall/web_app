@@ -1,4 +1,5 @@
 from eos.thermo_calc import NonInteractingMasslessQuantumEOSFullSolution, NonInteractingMasslessBoltzmannEOSFullSolution
+from eos.lattice import Lattice
 from densities.differential_density import EnergyDensity, NetBaryonDensity
 from calc_profile import CalcProfile
 import numpy as np
@@ -11,6 +12,8 @@ class EquationOfState:
                 self.eos = NonInteractingMasslessQuantumEOSFullSolution(cp, ed.densities, nB.densities)
             case "boltzmann":
                 self.eos = NonInteractingMasslessBoltzmannEOSFullSolution(cp, ed.densities, nB.densities)
+            case "lattice":
+                self.eos = Lattice(cp, ed.densities, nB.densities)
             case _:
                 pass
 

@@ -21,4 +21,4 @@
 
 ## Run Locally
 
-* `flask run` or `flask run --debug`
+* `flask run` or `flask run --debug` or `python app.py`

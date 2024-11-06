@@ -7,9 +7,13 @@ import os
 
 
 class IO:
-    def __init__(self, cp: CalcProfile, e: EnergyDensity, nB: NetBaryonDensity, eos: EquationOfState) -> None:
+    def __init__(self, cp: CalcProfile, e: EnergyDensity, nB: NetBaryonDensity, eos: EquationOfState, isOffline: bool) -> None:
         self.data = np.vstack([cp.times, e.densities, nB.densities, *(eos.get_data() for i in range(4))])
-        self.outputDir = os.getcwd() + "/results/"#mysite/v2/results/"
+
+        if isOffline:
+            self.outputDir = os.getcwd() + "/results/"
+        else:
+            self.outputDir = os.getcwd() + "/mysite/v2/results/"
 
         self.write_output()
         self.__make_plots(cp)

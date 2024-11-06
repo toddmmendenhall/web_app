@@ -3,9 +3,17 @@ from densities.differential_density import EnergyDensity, NetBaryonDensity
 from eos.equation_of_state import EquationOfState
 from input_output import IO
 from flask import Flask, render_template, request, send_from_directory
+from socket import gethostname
 
 
-app = Flask(__name__)
+class App(Flask):
+    def __init__(self):
+        super().__init__(__name__)
+
+        # Find out if running online on pythonanywhere.com
+        self.isOffline = True if 'liveconsole' not in gethostname() else False
+
+app = App()
 
 @app.route('/')
 def home():
@@ -23,12 +31,8 @@ def results():
     e = EnergyDensity(cp)
     nB = NetBaryonDensity(cp)
     eos = EquationOfState(cp, e, nB)
-    io = IO(cp, e, nB, eos)
+    io = IO(cp, e, nB, eos, app.isOffline)
     return render_template('results.html')
-
-@app.route('/results/view_energy_density')
-def view_energy_density():
-    return send_from_directory('results', 'e-vs-t.png')
 
 @app.route('/results/view_trajectory')
 def view_trajectory():
@@ -37,3 +41,8 @@ def view_trajectory():
 @app.route('/results/download')
 def download():
     return send_from_directory('results', 'time_evolution.csv', as_attachment = True)
+
+
+if __name__ == '__main__':
+    if 'liveconsole' not in gethostname():
+        app.run()
