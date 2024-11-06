@@ -78,8 +78,8 @@ class NonInteractingMasslessBoltzmannEOSFullSolution:
 
 if __name__ == "__main__":
     from utilities import CalculationContext
-    from differential_density import EnergyDensity, NetBaryonDensity
-    from piecewise import PiecewiseSolution
+    from densities.differential_density import EnergyDensity, NetBaryonDensity
+    from densities.piecewise import PiecewiseSolution
 
     cc = CalculationContext(79, 197, 200, 0.3, "boltzmann", 10)
 

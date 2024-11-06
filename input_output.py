@@ -1,5 +1,5 @@
 from calc_profile import CalcProfile
-from differential_density import EnergyDensity, NetBaryonDensity
+from densities.differential_density import EnergyDensity, NetBaryonDensity
 from eos.equation_of_state import EquationOfState
 import numpy as np
 import os
@@ -77,9 +77,9 @@ class IO:
 
 if __name__ == "__main__":
     from utilities import CalculationContext
-    from differential_density import EnergyDensity, NetBaryonDensity
-    from piecewise import PiecewiseSolution
-    from thermo_calc import NonInteractingMasslessBoltzmannEOSFullSolution
+    from densities.differential_density import EnergyDensity, NetBaryonDensity
+    from densities.piecewise import PiecewiseSolution
+    from eos.thermo_calc import NonInteractingMasslessBoltzmannEOSFullSolution
 
     cc = CalculationContext(79, 197, 200, 0.3, "boltzmann", 50)
 

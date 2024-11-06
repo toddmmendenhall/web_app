@@ -1,5 +1,5 @@
-from thermo_calc import NonInteractingMasslessQuantumEOSFullSolution, NonInteractingMasslessBoltzmannEOSFullSolution
-from differential_density import EnergyDensity, NetBaryonDensity
+from eos.thermo_calc import NonInteractingMasslessQuantumEOSFullSolution, NonInteractingMasslessBoltzmannEOSFullSolution
+from densities.differential_density import EnergyDensity, NetBaryonDensity
 from calc_profile import CalcProfile
 import numpy as np
 

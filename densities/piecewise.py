@@ -184,7 +184,7 @@ class PiecewiseSolution:
 
 if __name__ == "__main__":
     from utilities import CalculationContext
-    from differential_density import Integrand, EnergyDensity, NetBaryonDensity
+    from densities.differential_density import Integrand, EnergyDensity, NetBaryonDensity
 
 
     cc = CalculationContext(79, 197, 2, 0.1, "boltzmann", 50)

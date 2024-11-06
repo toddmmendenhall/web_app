@@ -1,5 +1,5 @@
 from calc_profile import CalcProfile
-from differential_density import EnergyDensity, NetBaryonDensity
+from densities.differential_density import EnergyDensity, NetBaryonDensity
 from eos.equation_of_state import EquationOfState
 from input_output import IO
 from flask import Flask, render_template, request, send_from_directory

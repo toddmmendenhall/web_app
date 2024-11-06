@@ -1,6 +1,6 @@
 from calc_profile import CalcProfile
 from utilities import Constants
-from piecewise import PiecewiseSolution
+from densities.piecewise import PiecewiseSolution
 import numpy as np
 
 
