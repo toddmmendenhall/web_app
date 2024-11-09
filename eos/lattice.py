@@ -33,31 +33,32 @@ class Lattice:
 
         self.__load_parameters()
 
-        # Set up QCD phase diagram grid
+        # Set up temperature dimension of QCD phase diagram
         self.dtype = np.float64
         dtemp = 10
+        temp = np.arange(50, 500 + dtemp, dtemp, dtype=self.dtype)
+
+        # Calculate the susceptibilities that are used in the Taylor series expansion of the pressure
+        # and their derivatives
+        self.__chi_ijk(temp)
+        self.__d_chi_ijk_dT(temp)
+
+        # Set up chemical potential dimensions of QCD phase diagram
         dmuB = 10
-        temp = np.arange(50, 300 + dtemp, dtemp, dtype=self.dtype)
         muB = np.arange(0, 1000 + dmuB, dmuB, dtype=self.dtype)
         self.temp, self.muB = np.meshgrid(temp, muB)
         self.muQ = np.zeros(self.temp.shape, dtype=self.dtype)
         self.muS = np.zeros(self.temp.shape, dtype=self.dtype)
-
-        # Calculate terms that are used in the Taylor series expansion of the pressure
-        self.__chi_ijk(self.temp)
-        self.__chi_2_B(self.temp)
-        self.__dchi_ijk_dT(self.temp)
-        self.__dchi_2_B_dT(self.temp)
         
-        # Calculate the Taylor series expansion of the pressure and some derivatives
-        # so we can calculate thermodynamics
-        self.__sum(self.temp, self.muB, self.muQ, self.muS)
-        self.__dsumdT(self.temp, self.muB, self.muQ, self.muS)
-        self.__dsumdmuB(self.temp, self.muB, self.muQ, self.muS)
-        self.__dsumdmuQ(self.temp, self.muB, self.muQ, self.muS)
-        self.__dsumdmuS(self.temp, self.muB, self.muQ, self.muS)
+        # Calculate the Taylor series expansion of the pressure and its derivatives w.r.t. the QCD phase
+        # diagram variables
+        self.__sum()
+        self.__dsumdT()
+        self.__dsumdmuB()
+        self.__dsumdmuQ()
+        self.__dsumdmuS()
 
-        # Calculate the thermodynamic quantities
+        # Calculate EoS over the QCD phase diagram
         self.pressure = self.temp**4 * self.sum
         self.entropy_density = 4 * self.temp**3 * self.sum + self.temp**4 * self.dsumdT
         self.net_baryon_density = self.temp**4 * self.dsumdmuB
@@ -65,7 +66,7 @@ class Lattice:
         self.net_strangeness_density = self.temp**4 * self.dsumdmuS
         self.energy_density = self.temp * self.entropy_density - self.pressure + self.muB * self.net_baryon_density + self.muQ * self.net_charge_density +  self.muS * self.net_strangeness_density
 
-        self.calculate()
+        # self.calculate()
 
 
     def __chi_ijk(self, temp: np.ndarray) -> None:
@@ -74,170 +75,103 @@ class Lattice:
         Args:
             temp (np.ndarray): _description_
         """
-        temp = temp / 154
-        temp = np.tile(temp, 10).reshape((*temp.shape, 10))
-        powers = np.arange(10)
-        self.chi_ijk: np.ndarray = np.dot(temp**(-powers), self.a_n_ijk.T) / np.dot(temp**(-powers), self.b_n_ijk.T) + self.c_0_ijk
-        self.chi_ijk = np.sum(self.chi_ijk, axis=2)
+        self.chi_ijk = np.zeros((len(self.indices), len(temp)))
+        scaledTemp200 = temp / 200
+        scaledTemp154 = temp / 154
+
+        for m, ijk in enumerate(self.indices):
+            if ijk == [2,0,0]:
+                h1, h2, f3, f4, f5 = tuple(self.chi_2_B_coeff)
+                t = scaledTemp200
+                self.chi_ijk[m] = np.exp((-h1 / t) - (h2 / t**2)) * f3 * (1 + np.tanh((f4 * t) + f5))
+            else:
+                powers = np.arange(10)
+                t = np.broadcast_to(scaledTemp154, (10, len(scaledTemp154))).T
+                a = np.dot(t**(-powers), self.a_n_ijk.T)
+                b = np.dot(t**(-powers), self.b_n_ijk.T)
+                x = a / b + self.c_0_ijk
+                n = m if m == 0 else m - 1
+                self.chi_ijk[m] = x.T[n]
 
 
-    def __chi_2_B(self, temp: np.ndarray) -> None:
+    def __d_chi_ijk_dT(self, temp: np.ndarray) -> None:
         """_summary_
 
         Args:
             temp (np.ndarray): _description_
         """
-        h1, h2, f3, f4, f5 = tuple(self.chi_2_B_coeff)
-        temp = temp / 200
-        self.chi_2_B: np.ndarray = np.exp((-h1 / temp) - (h2 / temp**2)) * f3 * (1 + np.tanh((f4 * temp) + f5))
+        self.d_chi_ijk_dT = np.zeros((len(self.indices), len(temp)))
+        scaledTemp200 = temp / 200
+        scaledTemp154 = temp / 154
+
+        for m, ijk in enumerate(self.indices):
+            if ijk == [2,0,0]:
+                h1, h2, f3, f4, f5 = tuple(self.chi_2_B_coeff)
+                t = scaledTemp200
+                self.d_chi_ijk_dT[m] = f3 * np.exp((-h1 / t) - (h2 / t**2)) / 200 * ((h1 / t**2 + 2 * h2 / t**3) * (1 + np.tanh((f4 * t) + f5)) + f4 / np.cosh(f4 * t + f5)**2)
+            else:
+                powers = np.arange(10)
+                t = np.broadcast_to(scaledTemp154, (10, len(scaledTemp154))).T
+
+                top = np.dot(t**(-powers), self.a_n_ijk.T)
+                bottom = np.dot(t**(-powers), self.b_n_ijk.T)
+                dtop = np.dot(-powers * t**(-powers-1), self.a_n_ijk.T)
+                dbottom = np.dot(-powers * t**(-powers - 1), self.b_n_ijk.T)
+
+                x = (bottom * dtop - top * dbottom) / bottom**2 / 154
+
+                n = m if m == 0 else m - 1
+                self.d_chi_ijk_dT[m] = x.T[n]
 
 
-    def __dchi_ijk_dT(self, temp: np.ndarray) -> None:
+    def __sum(self) -> None:
         """_summary_
-
-        Args:
-            temp (np.ndarray): _description_
         """
-        temp = temp / 154
-        temp = np.tile(temp, 10).reshape((*temp.shape, 10))
-        powers = np.arange(10)
-
-        top = np.dot(temp**(-powers), self.a_n_ijk.T)
-        bottom = np.dot(temp**(-powers), self.b_n_ijk.T)
-        dtop = np.dot(-powers * temp**(-powers-1), self.a_n_ijk.T)
-        dbottom = np.dot(-powers * temp**(-powers - 1), self.b_n_ijk.T)
-
-        self.dchi_ijk_dT: np.ndarray = (bottom * dtop - top * dbottom) / bottom**2 / 154
-        self.dchi_ijk_dT = np.sum(self.dchi_ijk_dT, axis=2)
-
-
-    def __dchi_2_B_dT(self, temp: np.ndarray) -> None:
-        """_summary_
-
-        Args:
-            temp (np.ndarray): _description_
-        """
-        temp = temp / 200
-        h1, h2, f3, f4, f5 = tuple(self.chi_2_B_coeff)
-        self.dchi_2_B_dT: np.ndarray = f3 * np.exp((-h1 / temp) - (h2 / temp**2)) / 200 * ((h1 / temp**2 + 2 * h2 / temp**3) * (1 + np.tanh((f4 * temp) + f5)) + f4 / np.cosh(f4 * temp + f5)**2)
-
-
-    def __sum(self, temp: np.ndarray, muB: np.ndarray, muQ: np.ndarray, muS: np.ndarray) -> None:
-        """_summary_
-
-        Args:
-            temp (np.ndarray): _description_
-            muB (np.ndarray): _description_
-            muQ (np.ndarray): _description_
-            muS (np.ndarray): _description_
-        """
-        self.sum: np.ndarray = np.zeros(temp.shape)
-        for ijk in self.indices:
+        self.sum: np.ndarray = np.zeros(self.temp.shape)
+        for m, ijk in enumerate(self.indices):
             i, j, k = tuple(ijk)
             const = 1 / (math.factorial(i) * math.factorial(j) * math.factorial(k))
-            if ijk == [2,0,0]:
-                chi = self.chi_2_B
-            else:
-                chi = self.chi_ijk
-            self.sum += const * chi * (muB / temp)**i * (muQ / temp)**j * (muS / temp)**k
+            self.sum += const * self.chi_ijk[m] * (self.muB / self.temp)**i * (self.muQ / self.temp)**j * (self.muS / self.temp)**k
 
 
-    def __dsumdT(self, temp: np.ndarray, muB: np.ndarray, muQ: np.ndarray, muS: np.ndarray) -> None:
+    def __dsumdT(self) -> None:
         """_summary_
-
-        Args:
-            temp (np.ndarray): _description_
-            muB (np.ndarray): _description_
-            muQ (np.ndarray): _description_
-            muS (np.ndarray): _description_
         """
-        self.dsumdT: np.ndarray = np.zeros(temp.shape)
-        for ijk in self.indices:
+        self.dsumdT: np.ndarray = np.zeros(self.temp.shape)
+        for m, ijk in enumerate(self.indices):
             i, j, k = tuple(ijk)
-
-            const = (muB**i * muQ**j * muS**k) / (math.factorial(i) * math.factorial(j) * math.factorial(k))
-
-            if ijk == [2,0,0]:
-                chi = self.chi_2_B
-                dchidT = self.dchi_2_B_dT
-            else:
-                chi = self.chi_ijk
-                dchidT = self.dchi_ijk_dT
-
-            m = i + j + k
-
-            self.dsumdT += const * (temp**m * dchidT - chi * m * temp**(m - 1)) / temp**(2 * m)
+            const = (self.muB**i * self.muQ**j * self.muS**k) / (math.factorial(i) * math.factorial(j) * math.factorial(k))
+            self.dsumdT += const * (self.temp**(i + j + k) * self.d_chi_ijk_dT[m] - self.chi_ijk[m] * (i + j + k) * self.temp**((i + j + k) - 1)) / self.temp**(2 * (i + j + k))
 
 
-    def __dsumdmuB(self, temp: np.ndarray, muB: np.ndarray, muQ: np.ndarray, muS: np.ndarray) -> None:
+    def __dsumdmuB(self) -> None:
         """_summary_
-
-        Args:
-            temp (np.ndarray): _description_
-            muB (np.ndarray): _description_
-            muQ (np.ndarray): _description_
-            muS (np.ndarray): _description_
         """
-        self.dsumdmuB: np.ndarray = np.zeros(temp.shape)
-        for ijk in self.indices:
+        self.dsumdmuB: np.ndarray = np.zeros(self.temp.shape)
+        for m, ijk in enumerate(self.indices):
             i, j, k = tuple(ijk)
-
-            const = i * (muB**(i-1) * muQ**j * muS**k) / (math.factorial(i) * math.factorial(j) * math.factorial(k))
-
-            if ijk == [2,0,0]:
-                chi = self.chi_2_B
-            else:
-                chi = self.chi_ijk
-
-            m = i + j + k
-
-            self.dsumdmuB += const * chi / temp**m
+            const = 0 if i == 0 else i * (self.muB**(i-1) * self.muQ**j * self.muS**k) / (math.factorial(i) * math.factorial(j) * math.factorial(k))
+            self.dsumdmuB += const * self.chi_ijk[m] / self.temp**(i + j + k)
 
 
-    def __dsumdmuQ(self, temp: np.ndarray, muB: np.ndarray, muQ: np.ndarray, muS: np.ndarray) -> None:
+    def __dsumdmuQ(self) -> None:
         """_summary_
-
-        Args:
-            temp (np.ndarray): _description_
-            muB (np.ndarray): _description_
-            muQ (np.ndarray): _description_
-            muS (np.ndarray): _description_
         """
-        self.dsumdmuQ: np.ndarray = np.zeros(temp.shape)
-        for ijk in self.indices:
+        self.dsumdmuQ: np.ndarray = np.zeros(self.temp.shape)
+        for m, ijk in enumerate(self.indices):
             i, j, k = tuple(ijk)
-
-            const = j * (muB**i * muQ**(j-1) * muS**k) / (math.factorial(i) * math.factorial(j) * math.factorial(k))
-
-            if ijk == [2,0,0]:
-                chi = self.chi_2_B
-            else:
-                chi = self.chi_ijk
-
-            self.dsumdmuQ += const * chi / temp**(i + j + k)
+            const = 0 if j == 0 else j * (self.muB**i * self.muQ**(j-1) * self.muS**k) / (math.factorial(i) * math.factorial(j) * math.factorial(k))
+            self.dsumdmuQ += const * self.chi_ijk[m] / self.temp**(i + j + k)
 
 
-    def __dsumdmuS(self, temp: np.ndarray, muB: np.ndarray, muQ: np.ndarray, muS: np.ndarray) -> None:
+    def __dsumdmuS(self) -> None:
         """_summary_
-
-        Args:
-            temp (np.ndarray): _description_
-            muB (np.ndarray): _description_
-            muQ (np.ndarray): _description_
-            muS (np.ndarray): _description_
         """
-        self.dsumdmuS: np.ndarray = np.zeros(temp.shape)
-        for ijk in self.indices:
+        self.dsumdmuS: np.ndarray = np.zeros(self.temp.shape)
+        for m, ijk in enumerate(self.indices):
             i, j, k = tuple(ijk)
-
-            const = k * (muB**i * muQ**j * muS**(k-1)) / (math.factorial(i) * math.factorial(j) * math.factorial(k))
-
-            if ijk == [2,0,0]:
-                chi = self.chi_2_B
-            else:
-                chi = self.chi_ijk
-
-            self.dsumdmuS += const * chi / temp**(i + j + k)
+            const = 0 if k == 0 else k * (self.muB**i * self.muQ**j * self.muS**(k-1)) / (math.factorial(i) * math.factorial(j) * math.factorial(k))
+            self.dsumdmuS += const * self.chi_ijk[m] / self.temp**(i + j + k)
 
 
     def __load_parameters(self) -> None:
