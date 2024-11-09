@@ -19,7 +19,7 @@ class Lattice:
         self.nQs = cp.z / cp.a * nBs
         self.nSs = np.zeros(es.size)
         
-        self.thermoVars = np.zeros((es.size, 3))
+        self.thermoVars = np.zeros((es.size, 4))
 
         # All combinations of i,j,k whose sum is less than or equal to 4
         self.indices = [[0,0,0],
@@ -66,7 +66,7 @@ class Lattice:
         self.net_strangeness_density = self.temp**4 * self.dsumdmuS
         self.energy_density = self.temp * self.entropy_density - self.pressure + self.muB * self.net_baryon_density + self.muQ * self.net_charge_density +  self.muS * self.net_strangeness_density
 
-        # self.calculate()
+        self.calculate()
 
 
     def __chi_ijk(self, temp: np.ndarray) -> None:

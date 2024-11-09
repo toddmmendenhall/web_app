@@ -8,7 +8,7 @@ import os
 
 class IO:
     def __init__(self, cp: CalcProfile, e: EnergyDensity, nB: NetBaryonDensity, eos: EquationOfState, isOffline: bool) -> None:
-        self.data = np.vstack([cp.times, e.densities, nB.densities, *(eos.get_data() for i in range(4))])
+        self.data = np.vstack([cp.times, e.densities, nB.densities, *(eos.get_data())])
 
         if isOffline:
             self.outputDir = os.getcwd() + "/results/"
@@ -19,9 +19,9 @@ class IO:
         self.__make_plots(cp)
 
     def write_output(self):
-        header = 't (fm/c), eDens (GeV/fm^3), nbDens (fm^-3), temp (MeV), muB (MeV), muQ (MeV), muS(MeV)'
+        header = '   t (fm/c), e (GeV/fm^3),   nB (fm^-3),   temp (MeV),    muB (MeV),    muQ (MeV),    muS (MeV)'
         outputFile = self.outputDir + 'time_evolution.csv'
-        np.savetxt(outputFile, self.data.T, delimiter = ",", fmt = "%10.3e", header = header)
+        np.savetxt(outputFile, self.data.T, delimiter = ",", fmt = "%13.3e", header = header)
 
     def __make_plots(self, cp: CalcProfile):
         self.__make_density_plot(cp)
@@ -72,10 +72,8 @@ class IO:
         ax.set_xlabel('$\mu_{\\rm B}$ (MeV)')
         ax.set_ylabel('T (MeV)')
 
-        legend_title = '$\sqrt{s_{\\rm NN}}$ = ' + str(cp.s) + ' GeV, Z = ' + str(int(cp.z)) + ', A = ' + str(int(cp.a)) + ', $\\tau_{\\rm F}$ = ' + str(cp.tform) + ' fm/c\n Quantum Statistics'
-        ax.legend(frameon=False, title=legend_title)
-
-        figfile = self.outputDir + 'phase_diagram_trajectory.png'
+        legendTitle = f'{(cp.eosType)} EoS' 
+        ax.legend(frameon=False, title = legendTitle)
 
         fig.tight_layout()
         fig.savefig(figfile)
