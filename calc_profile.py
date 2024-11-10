@@ -4,11 +4,12 @@ from scipy.optimize import fsolve
 
 class CalcProfile:
     def __init__(self, atomicNumber: int, atomicMassNumber: int, collisionEnergy: float, formationTime: float, eosType: str, nTimes: int) -> None:
+        precision = 12
         # Store the user input
         self.z: int = atomicNumber
         self.a: int = atomicMassNumber
         self.s: float = collisionEnergy
-        self.tform: float = formationTime
+        self.tform: float = np.round(formationTime, precision)
         self.eosType: str = eosType
         self.ntimes: int = nTimes
 
@@ -20,11 +21,11 @@ class CalcProfile:
         self.dt = 2 * self.ra / np.sinh(self.ycm)
 
         # Set up quantities for the time evolution
-        self.t1 = np.round(1 / 6 * self.dt, 9)
-        self.t2 = np.round(5 / 6 * self.dt, 9)
+        self.t1 = np.round(1 / 6 * self.dt, precision)
+        self.t2 = np.round(5 / 6 * self.dt, precision)
         self.tprod = self.t2 - self.t1
-        self.tmid = np.round((self.t1 + self.t2) / 2, 9)
-        self.ta = np.round(self.tmid + np.sqrt(self.tform**2 + (self.beta * self.tprod / 2)**2), 9)
+        self.tmid = np.round((self.t1 + self.t2) / 2, precision)
+        self.ta = np.round(self.tmid + np.sqrt(self.tform**2 + (self.beta * self.tprod / 2)**2), precision)
 
         # Set up the sampling times
         tmin = self.t1 + self.tform
@@ -33,7 +34,7 @@ class CalcProfile:
             tmax = 10
         self.times = np.logspace(np.log10(tmin), np.log10(tmax), self.ntimes)
         self.times = np.insert(self.times, 0, 0)
-        self.times = np.round(self.times, 9)
+        self.times = np.round(self.times, precision)
 
         # Set up values for the rapidity distributions
         self.detdy0old = 0.456 * 2 * self.a * np.log(self.s / 2.35)

@@ -1,4 +1,5 @@
 from calc_profile import CalcProfile
+from eos.contour_intersection_finder import ContourIntersectionFinder
 import numpy as np
 import math
 import os
@@ -35,8 +36,8 @@ class Lattice:
 
         # Set up temperature dimension of QCD phase diagram
         self.dtype = np.float64
-        dtemp = 10
-        temp = np.arange(50, 500 + dtemp, dtemp, dtype=self.dtype)
+        dtemp = 5
+        temp = np.arange(50, 400 + dtemp, dtemp, dtype=self.dtype)
 
         # Calculate the susceptibilities that are used in the Taylor series expansion of the pressure
         # and their derivatives
@@ -44,8 +45,8 @@ class Lattice:
         self.__d_chi_ijk_dT(temp)
 
         # Set up chemical potential dimensions of QCD phase diagram
-        dmuB = 10
-        muB = np.arange(0, 1000 + dmuB, dmuB, dtype=self.dtype)
+        dmuB = 5
+        muB = np.arange(0, 1200 + dmuB, dmuB, dtype=self.dtype)
         self.temp, self.muB = np.meshgrid(temp, muB)
         self.muQ = np.zeros(self.temp.shape, dtype=self.dtype)
         self.muS = np.zeros(self.temp.shape, dtype=self.dtype)
@@ -187,4 +188,8 @@ class Lattice:
     def calculate(self):
         """_summary_
         """
+        cif = ContourIntersectionFinder(self.temp, self.muB, self.energy_density, self.net_baryon_density, self.es, self.nBs)
+
         self.thermoVars = self.thermoVars.transpose()
+        self.thermoVars[1] = cif.intersections[0]
+        self.thermoVars[0] = cif.intersections[1]

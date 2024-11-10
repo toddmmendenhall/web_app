@@ -66,8 +66,8 @@ class IO:
                        direction='in', top=True, right=True)
         ax.grid(alpha=0.5)
 
-        ax.set_xlim(0)
-        ax.set_ylim(0)
+        ax.set_xlim(0, 1200)
+        ax.set_ylim(0, 400)
 
         ax.set_xlabel('$\mu_{\\rm B}$ (MeV)')
         ax.set_ylabel('T (MeV)')
