@@ -17,8 +17,8 @@ class Lattice:
         self.nBs = nBs
 
         # Define nQ_dens and nS_dens arrays
-        self.nQs = cp.z / cp.a * nBs
-        self.nSs = np.zeros(es.size)
+        # self.nQs = cp.z / cp.a * nBs
+        # self.nSs = np.zeros(es.size)
         
         self.thermoVars = np.zeros((es.size, 4))
 
@@ -36,7 +36,7 @@ class Lattice:
 
         # Set up temperature dimension of QCD phase diagram
         self.dtype = np.float64
-        dtemp = 5
+        dtemp = 10
         temp = np.arange(50, 400 + dtemp, dtemp, dtype=self.dtype)
 
         # Calculate the susceptibilities that are used in the Taylor series expansion of the pressure
@@ -45,12 +45,21 @@ class Lattice:
         self.__d_chi_ijk_dT(temp)
 
         # Set up chemical potential dimensions of QCD phase diagram
-        dmuB = 5
+        dmuB = 10
         muB = np.arange(0, 1200 + dmuB, dmuB, dtype=self.dtype)
         self.temp, self.muB = np.meshgrid(temp, muB)
-        self.muQ = np.zeros(self.temp.shape, dtype=self.dtype)
-        self.muS = np.zeros(self.temp.shape, dtype=self.dtype)
-        
+
+        # Partial-2 solution assumption
+        # self.muQ = np.zeros(self.temp.shape, dtype=self.dtype)
+        # self.muS = np.zeros(self.temp.shape, dtype=self.dtype)
+
+        # Partial-1 solution assumption
+        # self.muQ = np.zeros(self.temp.shape, dtype=self.dtype)
+        # self.muS = 1 / 3 * self.muB
+
+        # Full solution assumption
+        self.muQ, self.muS = self.__full_solution(temp, muB, cp.z, cp.a)
+
         # Calculate the Taylor series expansion of the pressure and its derivatives w.r.t. the QCD phase
         # diagram variables
         self.__sum()
@@ -193,3 +202,59 @@ class Lattice:
         self.thermoVars = self.thermoVars.transpose()
         self.thermoVars[1] = cif.intersections[0]
         self.thermoVars[0] = cif.intersections[1]
+
+
+    def __full_solution(self, temps, muBs, z, a) -> tuple:
+        from scipy.optimize import root
+
+        def chi_ijk(temp) -> np.ndarray:
+            chi = np.zeros(len(self.indices))
+            scaledTemp200 = temp / 200
+            scaledTemp154 = temp / 154
+
+            for m, ijk in enumerate(self.indices):
+                if ijk == [2,0,0]:
+                    h1, h2, f3, f4, f5 = tuple(self.chi_2_B_coeff)
+                    t = scaledTemp200
+                    chi[m] = np.exp((-h1 / t) - (h2 / t**2)) * f3 * (1 + np.tanh((f4 * t) + f5))
+                else:
+                    powers = np.arange(10)
+                    t = scaledTemp154
+                    a = np.dot(t**(-powers), self.a_n_ijk.T)
+                    b = np.dot(t**(-powers), self.b_n_ijk.T)
+                    x = a / b + self.c_0_ijk
+                    n = m if m == 0 else m - 1
+                    chi[m] = x.T[n]
+            return chi
+
+        def funcs(x, T, muB, Z, A):
+            muQ, muS = x
+
+            chi = chi_ijk(T)
+
+            eqn1 = (-chi[1]*T**2*Z/A*muB + chi[2]*T**2*muQ + chi[4]*T**2*(muB-Z/A*muQ)
+                - chi[5]*T**2*muS*Z/A + chi[6]*T**2*muS - chi[7]/6*muB**3*Z/A
+                + chi[8]/6*muQ**3 + chi[10]/6*(muB**3 - 3*Z/A*muB**2*muQ)
+                - chi[11]/2*muS*Z/A*muB**2 + chi[12]/2*muS*muQ**2
+                + chi[13]/6*(3*muB*muQ**2-Z/A*muQ**3) - chi[14]/6*muS**3*Z/A
+                + chi[15]/6*muS**3 + chi[16]/2*(muB**2*muQ-Z/A*muB*muQ**2)
+                - chi[17]/2*muS**2*Z/A*muB + chi[18]/2*muS**2*muQ
+                + chi[19]/2*muS*(muB**2-Z/A*2*muB*muQ)
+                + chi[20]/2*muS*(2*muB*muQ - Z/A*muQ**2)
+                + chi[21]/2*muS**2*(muB - Z/A*muQ))
+
+            eqn2 = (chi[3]*T**2*muS + chi[5]*T**2*muB + chi[6]*T**2*muQ
+                + chi[9]/6*muS**3 + chi[11]/6*muB**3 + chi[12]/6*muQ**3
+                + chi[14]/2*muB*muS**2 + chi[15]/2*muQ*muS**2 + chi[17]/2*muB**2*muS
+                + chi[18]/2*muQ**2*muS + chi[19]/2*muB**2*muQ + chi[20]/2*muB*muQ**2
+                + chi[21]*muB*muQ*muS)
+
+            return [eqn1, eqn2]
+
+        sol = np.zeros((*self.temp.shape, 2))
+        for i, temp in enumerate(temps):
+            for j, muB in enumerate(muBs):
+                sol[j][i] = root(funcs, np.array([-muB/10, muB/3]), args=(temp, muB, z, a)).x
+        sol = sol.transpose([2,0,1])
+        
+        return sol[0], sol[1]
