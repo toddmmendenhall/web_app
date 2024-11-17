@@ -1,6 +1,9 @@
 from eos.thermo_calc import NonInteractingMasslessQuantumEOSFullSolution, NonInteractingMasslessBoltzmannEOSFullSolution
 from eos.lattice import Lattice
 from densities.differential_density import EnergyDensity, NetBaryonDensity
+from ideal_gas_eos import IdealGasEOS
+from particle_data import ParticleData
+from phase_diagram import PhaseDiagram
 from calc_profile import CalcProfile
 import numpy as np
 
@@ -14,6 +17,10 @@ class EquationOfState:
                 self.eos = NonInteractingMasslessBoltzmannEOSFullSolution(cp, ed.densities, nB.densities)
             case "lattice":
                 self.eos = Lattice(cp, ed.densities, nB.densities)
+            case "nhg":
+                particle_data = ParticleData['pi_zero', 'neutron', 'antineutron']
+                phase_diagram = PhaseDiagram([50, 400, 10, 0, 1200, 10])
+                self.eos = IdealGasEOS(particle_data, phase_diagram)#cp, ed.densities, nB.densities)
             case _:
                 pass
 

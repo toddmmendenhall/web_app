@@ -1,0 +1,130 @@
+gluon:
+  type: boson
+  mass: 0.0
+  degeneracy: 16
+  baryon_number: 0
+  charge: 0
+  strangeness: 0
+  excluded_volume: 0
+up:
+  type: fermion
+  mass: 5.0
+  degeneracy: 6
+  baryon_number: 0.33
+  charge: 0.67
+  strangeness: 0
+  excluded_volume: 0
+down:
+  type: fermion
+  mass: 10.0
+  degeneracy: 6
+  baryon_number: 0.33
+  charge: -0.33
+  strangeness: 0
+  excluded_volume: 0
+strange:
+  type: fermion
+  mass: 93.5
+  degeneracy: 6
+  baryon_number: 0.33
+  charge: -0.33
+  strangeness: -1
+  excluded_volume: 0
+pi_zero:
+  type: boson
+  mass: 134.9768
+  degeneracy: 1
+  baryon_number: 0
+  charge: 0
+  strangeness: 0
+  excluded_volume: 0.114
+pi_plus:
+  type: boson
+  mass: 139.57039
+  degeneracy: 1
+  baryon_number: 0
+  charge: 1
+  strangeness: 0
+  excluded_volume: 0.45
+pi_minus:
+  type: boson
+  mass: 139.57039
+  degeneracy: 1
+  baryon_number: 0
+  charge: -1
+  strangeness: 0
+  excluded_volume: 0.45
+eta:
+  type: boson
+  mass: 547.862
+  degeneracy: 1
+  baryon_number: 0
+  charge: 0
+  strangeness: 0
+  excluded_volume: 0.45
+neutron:
+  type: fermion
+  mass: 939.5654205
+  degeneracy: 2
+  baryon_number: 1
+  charge: 0
+  strangeness: 0
+  excluded_volume: 0
+  excluded_volume: 0.718
+antineutron:
+  type: fermion
+  mass: 939
+  degeneracy: 2
+  baryon_number: -1
+  charge: 0
+  strangeness: 0
+  excluded_volume: 0.718
+proton:
+  type: fermion
+  mass: 938.27208816
+  degeneracy: 2
+  baryon_number: 1
+  charge: 2
+  strangeness: 0
+  excluded_volume: 0
+  excluded_volume: 0.718
+antiproton:
+  type: fermion
+  mass: 938.27208816
+  degeneracy: 2
+  baryon_number: -1
+  charge: -1
+  strangeness: 0
+  excluded_volume: 0.718
+delta_plus_plus:
+  type: fermion
+  mass: 1232
+  degeneracy: 4
+  baryon_number: 1
+  charge: 2
+  strangeness: 0
+  excluded_volume: 0.718
+delta_plus:
+  type: fermion
+  mass: 1232
+  degeneracy: 4
+  baryon_number: 1
+  charge: 1
+  strangeness: 0
+  excluded_volume: 0.718
+delta_zero:
+  type: fermion
+  mass: 1232
+  degeneracy: 4
+  baryon_number: 1
+  charge: 0
+  strangeness: 0
+  excluded_volume: 0.718
+delta_minus:
+  type: fermion
+  mass: 1232
+  degeneracy: 4
+  baryon_number: 1
+  charge: -1
+  strangeness: 0
+  excluded_volume: 0.718
