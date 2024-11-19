@@ -1,5 +1,8 @@
-from particle_data import ParticleData
-from phase_diagram import PhaseDiagram
+from eos.particle_data import ParticleData
+from eos.phase_diagram import PhaseDiagram
+from calc_profile import CalcProfile
+from eos.contour_intersection_finder import ContourIntersectionFinder
+
 import numpy as np
 from scipy.integrate import quad
 
@@ -7,19 +10,26 @@ from scipy.integrate import quad
 class IdealGasEOS:
     """Object that calculates the equation of state of an ideal gas of quantum particles
     """
-    def __init__(self, particle_data: ParticleData, phase_diagram: PhaseDiagram) -> None:
+    def __init__(self, particle_data: ParticleData, phase_diagram: PhaseDiagram, cp: CalcProfile, es: np.ndarray, nBs: np.ndarray) -> None:
         """Constructor that first calculates the pressure and then the other EOS variables
 
         Args:
             particle_data (ParticleData): Object that contains all the particles information
             phase_diagram (PhaseDiagram): Object that contains the grid over which the EOS is being calculated
         """
+        self.es = es
+        self.nBs = nBs
+        
+        self.thermoVars = np.zeros((es.size, 4))
+
         self._calculate_pressure(particle_data, phase_diagram)
         self.entropy_density = np.gradient(self.pressure, phase_diagram.temp, axis=1, edge_order=2)
         self.baryon_density = np.gradient(self.pressure, phase_diagram.muB, axis=0, edge_order=2)
         self.baryon_susceptibility = np.gradient(self.baryon_density, phase_diagram.muB, axis=0, edge_order=2)
-        temp, muB = phase_diagram.grid()
-        self.energy_density = temp * self.entropy_density - self.pressure + muB * self.baryon_density
+        self.temp, self.muB = phase_diagram.grid()
+        self.energy_density = self.temp * self.entropy_density - self.pressure + self.muB * self.baryon_density
+
+        self.calculate()
 
     def _calculate_pressure(self, particle_data: ParticleData, phase_diagram: PhaseDiagram) -> None:
         """Private method that loops over all the provided particles and calculates their partial pressures
@@ -91,3 +101,10 @@ class IdealGasEOS:
             for j, temp in enumerate(phase_diagram.temp):
                 self.pressure[i][j] += quad(self._integrand_fermion, 0, np.inf, args=(temp, mu, species_data['mass']))[0]
         self.pressure *= species_data['degeneracy'] / (2 * np.pi**2) * phase_diagram.temp
+        
+    def calculate(self):
+        cif = ContourIntersectionFinder(self.temp, self.muB, self.energy_density, self.baryon_density, self.es, self.nBs)
+
+        self.thermoVars = self.thermoVars.transpose()
+        self.thermoVars[1] = cif.intersections[0]
+        self.thermoVars[0] = cif.intersections[1]

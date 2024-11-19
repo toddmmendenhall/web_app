@@ -1,5 +1,5 @@
 import yaml
-
+import os
 
 class ParticleData:
     def __init__(self, names: list[str]) -> None:
@@ -12,7 +12,8 @@ class ParticleData:
         self._load_data()
 
     def _load_data(self):
-        stream = open('particle_data.yaml', 'r')
+        file = os.getcwd() + '/eos/particle_data.yaml'
+        stream = open(file, 'r')
         particle_data: dict = yaml.load(stream, Loader=yaml.FullLoader)
         for name in self.names:
             self.type[name] = particle_data[name]['type']

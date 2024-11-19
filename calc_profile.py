@@ -28,8 +28,8 @@ class CalcProfile:
         self.ta = np.round(self.tmid + np.sqrt(self.tform**2 + (self.beta * self.tprod / 2)**2), precision)
 
         # Set up the sampling times
-        tmin = self.t1 + self.tform
-        tmax = 3 * self.t2 + self.tform
+        tmin = np.round(self.t1 + self.tform, precision)
+        tmax = np.round(3 * self.t2 + self.tform, precision)
         if(tmax < 10):
             tmax = 10
         self.times = np.logspace(np.log10(tmin), np.log10(tmax), self.ntimes)

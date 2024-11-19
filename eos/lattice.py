@@ -50,15 +50,15 @@ class Lattice:
         self.temp, self.muB = np.meshgrid(temp, muB)
 
         # Partial-2 solution assumption
-        # self.muQ = np.zeros(self.temp.shape, dtype=self.dtype)
-        # self.muS = np.zeros(self.temp.shape, dtype=self.dtype)
+        self.muQ = np.zeros(self.temp.shape, dtype=self.dtype)
+        self.muS = np.zeros(self.temp.shape, dtype=self.dtype)
 
         # Partial-1 solution assumption
         # self.muQ = np.zeros(self.temp.shape, dtype=self.dtype)
         # self.muS = 1 / 3 * self.muB
 
         # Full solution assumption
-        self.muQ, self.muS = self.__full_solution(temp, muB, cp.z, cp.a)
+        # self.muQ, self.muS = self.__full_solution(temp, muB, cp.z, cp.a)
 
         # Calculate the Taylor series expansion of the pressure and its derivatives w.r.t. the QCD phase
         # diagram variables
