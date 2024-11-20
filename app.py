@@ -7,11 +7,9 @@ from flask import Flask, render_template, request, send_from_directory
 
 app = Flask(__name__)
 
-
 @app.route('/')
 def home():
-    return render_template('index.html', display_results = 0)
-
+    return render_template('home.html')
 
 @app.route('/results', methods = ['POST'])
 def results():
@@ -26,19 +24,15 @@ def results():
     nB = NetBaryonDensity(cp)
     eos = EquationOfState(cp, e, nB)
     io = IO(cp, e, nB, eos)
+    return render_template('results.html')
 
-    return render_template('index.html', display_results = 1)
+@app.route('/results/view_energy_density')
+def view_energy_density():
+    return send_from_directory('results', 'e-vs-t.png')
 
-
-@app.route('/results/view')
-def view():
-    return send_from_directory('results', 'phase_diagram_trajectory.pdf')
-
-
-@app.route('/results/view2')
-def view2():
-    return send_from_directory('results', 'e-vs-t.pdf')
-
+@app.route('/results/view_trajectory')
+def view_trajectory():
+    return send_from_directory('results', 'phase_diagram_trajectory.png')
 
 @app.route('/results/download')
 def download():

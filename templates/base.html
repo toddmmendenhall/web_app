@@ -1,0 +1,41 @@
+<!doctype html>
+<title>Semi-analytical Calculator</title>
+<h1>Semi-analytical calculation of the average \(\epsilon\) and \(T-\mu_B\)
+    trajectory of central A+A collisions</h1>
+<h2>(Updated March 1, 2022)</h2>
+<style>
+    body {
+        max-width: 100%;
+        min-width: 100px;
+        background-color: powderblue;
+    }
+</style>
+<script type="text/javascript" id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+
+<form action='/results' method="POST">
+  <input type="value" name="atomicNum" value="79", size="5">
+  <label>Atomic number (for projectile and target)</label><br>
+  <input type="value" name="massNum" value="197", size="5">
+  <label>Atomic mass number (for projectile and target)</label><br>
+  <input type="value" name="colEn" value="200", size="5">
+  <label>Center-of-mass energy per nucleon pair (AGeV)</label><br>
+  <input type="value" name="formTime" value="0.3", size="5">
+  <label>Parton formation time (fm/c)</label><br>
+  <input type="value" name="nTimes" value="10", size="5">
+  <label>Number of sampling times (a whole number less than 100)</label><br>
+  <input type="radio" name="whichStats" value="quantum" checked="checked">Ideal gas of massless partons with quantum statistics.<br>
+  <input type="radio" name="whichStats" value="boltzmann">Ideal parton of massless partons gas with Boltzmann statistics<br>
+  <input type="submit" name="mySubmit" value="Submit">
+</form>
+
+<section class="content">
+  <header>
+    {% block header %}{% endblock %}
+  </header>
+  {% for message in get_flashed_messages() %}
+    <div class="flash">{{ message }}</div>
+  {% endfor %}
+  {% block content %}{% endblock %}
+</section>

@@ -2,6 +2,7 @@ from calc_profile import CalcProfile
 from densities.differential_density import EnergyDensity, NetBaryonDensity
 from eos.equation_of_state import EquationOfState
 import numpy as np
+from matplotlib.figure import Figure
 import os
 
 
@@ -11,22 +12,21 @@ class IO:
         self.outputDir = os.getcwd() + "/results/"#mysite/v2/results/"
 
         self.write_output()
-        self.make_plots(cp)
+        self.__make_plots(cp)
 
     def write_output(self):
         header = 't (fm/c), eDens (GeV/fm^3), nbDens (fm^-3), temp (MeV), muB (MeV), muQ (MeV), muS(MeV)'
         outputFile = self.outputDir + 'time_evolution.csv'
         np.savetxt(outputFile, self.data.T, delimiter = ",", fmt = "%10.3e", header = header)
 
-    def make_plots(self, cp: CalcProfile):
+    def __make_plots(self, cp: CalcProfile):
         self.__make_density_plot(cp)
         self.__make_thermo_plot(cp)
 
     def __make_density_plot(self, cp: CalcProfile):
-        import matplotlib.pyplot as plt
+        fig = Figure()
+        ax = fig.subplots()
 
-        fig, ax = plt.subplots()
-        
         times = self.data[0]
         eDens = self.data[1]
 
@@ -43,24 +43,24 @@ class IO:
         legendTitle = "$\sqrt{s_{\\rm NN}}$ = " + str(cp.s) + ' GeV, A = ' + str(int(cp.a)) + ', $\\tau_{\\rm F}$ = ' + str(cp.tform) + ' fm/c'
         ax.legend(frameon=False, title = legendTitle)
 
-        figfile = self.outputDir + 'e-vs-t.pdf'
+        figfile = self.outputDir + 'e-vs-t.png'
 
-        plt.tight_layout()
-        plt.savefig(figfile)
+        fig.tight_layout()
+        fig.savefig(figfile)
 
     def __make_thermo_plot(self, cp: CalcProfile):
-        import matplotlib.pyplot as plt
-
         # Plot and save a T-muB trajectory figure
-        fig, ax = plt.subplots()
+        fig = Figure()
+        ax = fig.subplots()
 
         temp = self.data[3]
         muB = self.data[4]
 
-        ax.plot(muB, temp, marker = ".")
+        ax.plot(muB, temp, marker=".")
 
-        ax.tick_params(axis = 'both', which = 'both', direction = 'in', top = True, right = True)
-        ax.grid(alpha = 0.5)
+        ax.tick_params(axis='both', which='both',
+                       direction='in', top=True, right=True)
+        ax.grid(alpha=0.5)
 
         ax.set_xlim(0)
         ax.set_ylim(0)
@@ -68,12 +68,14 @@ class IO:
         ax.set_xlabel('$\mu_{\\rm B}$ (MeV)')
         ax.set_ylabel('T (MeV)')
 
-        plt.title('$\sqrt{s_{\\rm NN}}$ = ' + str(cp.s) + ' GeV, Z = ' + str(int(cp.z)) + ', A = ' + str(int(cp.a)) + ', $\\tau_{\\rm F}$ = ' + str(cp.tform) + ' fm/c, Quantum Statistics')
+        legend_title = '$\sqrt{s_{\\rm NN}}$ = ' + str(cp.s) + ' GeV, Z = ' + str(int(cp.z)) + ', A = ' + str(int(cp.a)) + ', $\\tau_{\\rm F}$ = ' + str(cp.tform) + ' fm/c\n Quantum Statistics'
+        ax.legend(frameon=False, title=legend_title)
 
-        figfile = self.outputDir + 'phase_diagram_trajectory.pdf'
+        figfile = self.outputDir + 'phase_diagram_trajectory.png'
 
-        plt.tight_layout()
-        plt.savefig(figfile)
+        fig.tight_layout()
+        fig.savefig(figfile)
+
 
 if __name__ == "__main__":
     from utilities import CalculationContext

@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+<img src="/results/view_energy_density">
+<img src="/results/view_trajectory">
+
+<a href="/results/download" Download>
+    <button type="button">Download Data File</button>
+</a>
+{% endblock %}
