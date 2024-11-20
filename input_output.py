@@ -34,20 +34,20 @@ class IO:
         times = self.data[0]
         eDens = self.data[1]
 
-        ax.plot(times, eDens, marker = ".", label = 'Semi-analytical result')
-        ax.tick_params(axis = 'both', which = 'both', direction = 'in', top = True, right = True)
-        ax.grid(alpha = 0.5)
+        ax.plot(times, eDens, marker='.', label='Semi-analytical result')
+        ax.tick_params(axis='both', which='both', direction='in', top=True, right=True)
+        ax.grid(alpha=0.5)
 
         ax.set_xlim(0, np.max(times))
         ax.set_ylim(0)
 
-        ax.set_xlabel("t (fm/c)")
-        ax.set_ylabel("$\\rm{\epsilon}(t)$ (GeV/fm$^3$)")
+        ax.set_xlabel('t (fm/c)')
+        ax.set_ylabel('$\\rm{\epsilon}(t)$ (GeV/fm$^3$)')
 
-        legendTitle = "$\sqrt{s_{\\rm NN}}$ = " + str(cp.s) + ' GeV, A = ' + str(int(cp.a)) + ', $\\tau_{\\rm F}$ = ' + str(cp.tform) + ' fm/c'
+        legendTitle = f'$\sqrt{{s_{{\\rm NN}}}}$ = {cp.s} GeV, A = {cp.a}, $\\tau_{{\\rm F}}$ = {cp.tform} fm/c' 
         ax.legend(frameon=False, title = legendTitle)
 
-        figfile = self.outputDir + 'e-vs-t.png'
+        figfile = self.outputDir + 'e_vs_t.png'
 
         fig.tight_layout()
         fig.savefig(figfile)
@@ -60,10 +60,9 @@ class IO:
         temp = self.data[3]
         muB = self.data[4]
 
-        ax.plot(muB, temp, marker=".")
+        ax.plot(muB, temp, marker='.', label=f'{cp.eosType} EoS')
 
-        ax.tick_params(axis='both', which='both',
-                       direction='in', top=True, right=True)
+        ax.tick_params(axis='both', which='both', direction='in', top=True, right=True)
         ax.grid(alpha=0.5)
 
         ax.set_xlim(0, 1200)
@@ -72,32 +71,10 @@ class IO:
         ax.set_xlabel('$\mu_{\\rm B}$ (MeV)')
         ax.set_ylabel('T (MeV)')
 
-        legendTitle = f'{(cp.eosType)} EoS' 
+        legendTitle = f'$\sqrt{{s_{{\\rm NN}}}}$ = {cp.s} GeV, Z = {cp.z}, A = {cp.a}, $\\tau_{{\\rm F}}$ = {cp.tform} fm/c' 
         ax.legend(frameon=False, title = legendTitle)
+
+        figfile = self.outputDir + 'phase_diagram_trajectory.png'
 
         fig.tight_layout()
         fig.savefig(figfile)
-
-
-if __name__ == "__main__":
-    from utilities import CalculationContext
-    from densities.differential_density import EnergyDensity, NetBaryonDensity
-    from densities.piecewise import PiecewiseSolution
-    from eos.thermo_calc import NonInteractingMasslessBoltzmannEOSFullSolution
-
-    cc = CalculationContext(79, 197, 200, 0.3, "boltzmann", 50)
-
-    ed = EnergyDensity(cc)
-    nd = NetBaryonDensity(cc)
-
-    pse = PiecewiseSolution(cc, ed)
-    pse.calculate(cc)
-    psn = PiecewiseSolution(cc, nd)
-    psn.calculate(cc)
-
-    eos = NonInteractingMasslessBoltzmannEOSFullSolution(cc, pse, psn)
-    eos.calculate()
-
-    io = IO(eos)
-    io.write_output()
-    io.make_plots(cc)

@@ -34,6 +34,10 @@ def results():
     io = IO(cp, e, nB, eos, app.isOffline)
     return render_template('results.html')
 
+@app.route('/results/view_energy_density')
+def view_energy_density():
+    return send_from_directory('results', 'e_vs_t.png')
+
 @app.route('/results/view_trajectory')
 def view_trajectory():
     return send_from_directory('results', 'phase_diagram_trajectory.png')
