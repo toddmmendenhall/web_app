@@ -19,7 +19,7 @@ class EquationOfState:
                 self.eos = Lattice(cp, ed.densities, nB.densities)
             case "nhg":
                 particle_data = ParticleData(['pi_zero', 'neutron', 'antineutron'])
-                phase_diagram = PhaseDiagram([50, 400, 10, 0, 1200, 10])
+                phase_diagram = PhaseDiagram([50, 400, 50, 0, 1200, 50])
                 self.eos = IdealGasEOS(particle_data, phase_diagram, cp, ed.densities, nB.densities)
             case _:
                 pass

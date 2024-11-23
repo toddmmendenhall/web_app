@@ -47,6 +47,7 @@ class IdealGasEOS:
                 self._calculate_pressure_fermion(phase_diagram, species_data)
             else:
                 raise
+        self.pressure *= phase_diagram.temp / (2 * np.pi**2)
 
     def _integrand_boson(self, p: np.float64, temp: np.float64, mu: np.float64, m: np.float64) -> np.float64:
         """Private method that defines the integrand of the pressure for a boson over the momentum
@@ -83,11 +84,11 @@ class IdealGasEOS:
             phase_diagram (PhaseDiagram): Object that contains the grid over which the EOS is being calculated
             species_data (dict[str, any]): Object that contains the boson's properties
         """
+        const: np.float64 = species_data['degeneracy']
         for i, muB in enumerate(phase_diagram.muB):
             mu: np.float64 = species_data['baryon_number'] * muB
             for j, temp in enumerate(phase_diagram.temp):
-                self.pressure[i][j] += quad(self._integrand_boson, 0, np.inf, args=(temp, mu, species_data['mass']))[0]
-        self.pressure *= species_data['degeneracy'] / (2 * np.pi**2) * phase_diagram.temp
+                self.pressure[i][j] += const * quad(self._integrand_boson, 0, np.inf, args=(temp, mu, species_data['mass']))[0]
 
     def _calculate_pressure_fermion(self, phase_diagram: PhaseDiagram, species_data: dict[str, any]) -> None:
         """Private method that calculates the partial pressure of a single fermion
@@ -96,11 +97,11 @@ class IdealGasEOS:
             phase_diagram (PhaseDiagram): Object that contains the grid over which the EOS is being calculated
             species_data (dict[str, any]): Object that contains the fermion's properties
         """
+        const: np.float64 = species_data['degeneracy']
         for i, muB in enumerate(phase_diagram.muB):
             mu: np.float64 = species_data['baryon_number'] * muB
             for j, temp in enumerate(phase_diagram.temp):
-                self.pressure[i][j] += quad(self._integrand_fermion, 0, np.inf, args=(temp, mu, species_data['mass']))[0]
-        self.pressure *= species_data['degeneracy'] / (2 * np.pi**2) * phase_diagram.temp
+                self.pressure[i][j] += const * quad(self._integrand_fermion, 0, np.inf, args=(temp, mu, species_data['mass']))[0]
         
     def calculate(self):
         cif = ContourIntersectionFinder(self.temp, self.muB, self.energy_density, self.baryon_density, self.es, self.nBs)
